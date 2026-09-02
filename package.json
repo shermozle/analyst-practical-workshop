@@ -1,0 +1,11 @@
+{
+  "name": "workshop-factory",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "workshop:build": "node scripts/build-workshop.mjs",
+    "workshop:check": "node scripts/check-workshop.mjs",
+    "workshop:smoke": "node tests/browser-smoke.mjs",
+    "workshop:serve": "node scripts/serve-workshop.mjs"
+  }
+}

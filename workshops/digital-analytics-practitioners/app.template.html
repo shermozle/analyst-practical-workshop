@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Workshop to-do app</title>
+  <style>
+    :root{--bg:#f2f4f8;--paper:#fff;--ink:#161922;--muted:#667083;--line:#dfe3eb;--brand:#3157d5;--brand2:#193591;--ok:#08785d;--warn:#b4540a;--bad:#b42318;--shadow:0 18px 50px rgba(26,35,62,.10)}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}button,input,select{font:inherit}button{cursor:pointer}.topbar{background:#101529;color:#fff;padding:13px 24px;display:flex;align-items:center;justify-content:space-between;gap:18px;position:sticky;top:0;z-index:5}.brand{font-weight:850;letter-spacing:-.02em}.topbar nav{display:flex;gap:9px;align-items:center;flex-wrap:wrap}.topbar a,.topbar button{color:#dfe5ff;background:transparent;border:1px solid #35405f;border-radius:8px;padding:7px 10px;text-decoration:none}.status{display:inline-flex;align-items:center;gap:7px;font-size:13px}.status i{width:8px;height:8px;border-radius:50%;background:#8690a8}.status.connected i{background:#2ed7a6}.layout{max-width:1440px;margin:auto;padding:24px;display:grid;grid-template-columns:minmax(0,1.45fr) minmax(360px,.75fr);gap:20px}.stack{display:grid;gap:20px;align-content:start}.panel{background:var(--paper);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:21px}.panel h1,.panel h2,.panel h3{margin:0 0 8px}.panel h1{font-size:32px;letter-spacing:-.035em}.panel h2{font-size:20px}.panel p{color:var(--muted);margin:6px 0 14px}.add-form{display:flex;gap:9px;margin:18px 0}.add-form input{flex:1}.field,input,select{border:1px solid #cbd1dd;border-radius:9px;background:#fff;color:#161922;padding:10px 11px;min-width:0}.field{display:grid;gap:5px}.field span{font-size:12px;font-weight:750;color:var(--muted)}.primary,.secondary,.danger,.icon-btn{border:0;border-radius:9px;padding:10px 14px;font-weight:750}.primary{background:var(--brand);color:#fff}.primary:hover{background:var(--brand2)}.secondary{background:#e9edfa;color:#21346d}.danger{background:#feeceb;color:var(--bad)}.icon-btn{padding:7px 9px;background:transparent;color:var(--muted)}.tasks{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}.task{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:13px 3px;border-bottom:1px solid var(--line)}.task input{width:20px;height:20px}.task-title{font-size:16px;overflow-wrap:anywhere}.task.done .task-title{text-decoration:line-through;color:#8a93a5}.task-actions{display:flex;gap:3px}.filters{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:16px}.filters button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 11px;color:var(--muted)}.filters button.on{background:#e7ecff;border-color:#a8b8f9;color:#2444ad}.filters .count{margin-left:auto;color:var(--muted)}.connection-grid,.profile-grid{display:grid;grid-template-columns:1fr 150px;gap:10px}.profile-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.wide{grid-column:1/-1}.small{font-size:12px;color:var(--muted)}.key-row{display:flex;gap:9px}.key-row .field{flex:1}.activity{height:420px;overflow:auto;background:#0d111a;color:#dce3f3;border-radius:10px;padding:10px;font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace}.log{border-bottom:1px solid #242c3b;padding:10px 7px}.log:last-child{border-bottom:0}.log-head{display:flex;justify-content:space-between;gap:10px;color:#93a2bd}.log b{color:#fff}.log pre{margin:7px 0 0;white-space:pre-wrap;overflow-wrap:anywhere;color:#b9c5da}.log.ok .log-head{color:#57ddb8}.log.warn .log-head{color:#ffb56f}.plan-row{display:grid;grid-template-columns:auto 150px minmax(0,1fr);gap:9px;align-items:center;padding:9px 0;border-top:1px solid var(--line)}.plan-row label{font-size:13px;color:var(--muted)}.plan-row input[type=text]{width:100%;padding:8px 9px}.plan-row input[type=checkbox]{width:18px;height:18px;margin:0}.plan-row.off{opacity:.48}.plan-row.off input[type=text]{text-decoration:line-through}.prop-list{grid-column:3;display:flex;flex-wrap:wrap;gap:5px}.chip{background:#eef1f7;border-radius:999px;padding:3px 7px;font:11px ui-monospace,SFMono-Regular,Menlo,monospace;color:#556078}.callout{border-radius:9px;padding:11px 12px;background:#fff3e8;color:#7a3705;font-size:13px;margin:12px 0}.privacy{background:#e9f6f2;color:#075a47}.drawer summary{cursor:pointer;font-weight:800}.drawer[open] summary{margin-bottom:15px}.empty{padding:30px;text-align:center;color:var(--muted)}.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#101529;color:#fff;padding:10px 14px;border-radius:9px;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:.18s}.toast.on{opacity:1}@media(max-width:980px){.layout{grid-template-columns:1fr}.activity{height:300px}}@media(max-width:600px){.layout{padding:12px}.topbar{padding:10px 12px;align-items:flex-start}.connection-grid,.profile-grid{grid-template-columns:1fr}.plan-row{grid-template-columns:auto minmax(0,1fr)}.prop-list{grid-column:1/-1}.task-actions{flex-direction:column}.filters .count{width:100%;margin-left:0}}
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div><div class="brand">Workshop tasks</div><div id="connection-status" class="status"><i></i><span>Preview mode</span></div></div>
+    <nav><a href="guide.html">Participant guide</a><a href="index.html">Workshop hub</a><button id="share" type="button">Copy share link</button></nav>
+  </header>
+
+  <main class="layout">
+    <div class="stack">
+      <section class="panel">
+        <h1>Things to do</h1>
+        <p>The list state lives in the URL. Add, complete, edit, filter, delete, and share tasks while the Activity panel shows the event payload.</p>
+        <form id="add-form" class="add-form"><input id="new-task" maxlength="120" autocomplete="off" placeholder="Add a task" aria-label="New task"><button id="add-button" class="primary" type="submit">Add task</button></form>
+        <ul id="tasks" class="tasks"></ul>
+        <div class="filters" aria-label="Task filters"><button type="button" data-filter="all">All</button><button type="button" data-filter="active">Active</button><button type="button" data-filter="completed">Completed</button><span id="task-count" class="count"></span></div>
+      </section>
+
+      <details class="panel drawer" open>
+        <summary>Connection</summary>
+        <p>Use a browser project API key. The app disables automatic tracking so the Activity panel only contains the events in this exercise.</p>
+        <div class="connection-grid">
+          <label class="field"><span>Amplitude project API key</span><input id="api-key" autocomplete="off" spellcheck="false" placeholder="Paste project API key"></label>
+          <label class="field"><span>Project region</span><select id="region"><option value="US">US</option><option value="EU">EU</option></select></label>
+          <div class="wide"><button id="connect" class="primary" type="button">Connect Amplitude</button> <button id="disconnect" class="secondary" type="button">Clear connection</button></div>
+        </div>
+        <div class="callout">The project API key is intended for client-side use. It stays in this browser tab and is kept out of the URL, so a share link never carries it. Don't enter a secret key, email address, task contents, or other private data.</div>
+        <h3>Workshop profile</h3>
+        <div class="profile-grid">
+          <label class="field"><span>Generated user ID</span><input id="user-id" spellcheck="false"></label>
+          <label class="field"><span>Role</span><input id="role" value="digital analyst"></label>
+          <label class="field"><span>Analytics experience</span><select id="experience"><option value="beginner">beginner</option><option value="intermediate" selected>intermediate</option><option value="advanced">advanced</option></select></label>
+          <label class="field"><span>Workshop table</span><input id="table" placeholder="table-4"></label>
+          <div class="wide"><button id="identify" class="secondary" type="button">Send user properties</button></div>
+        </div>
+      </details>
+
+      <details class="panel drawer" id="plan-panel">
+        <summary>Instrumentation plan</summary>
+        <p>Untick an action you decided not to track, and edit an event name to match your plan. Property names stay fixed in this app so the room can compare payloads.</p>
+        <div class="callout privacy">Task text is never sent to Amplitude. Length and age support the exercise questions without collecting what somebody typed.</div>
+        <div id="plan"></div>
+        <button id="reset-plan" class="secondary" type="button">Restore reference plan</button>
+      </details>
+    </div>
+
+    <aside class="stack">
+      <section class="panel">
+        <h2>Activity</h2>
+        <p>Preview payloads appear before connection. After connection, the response shows whether the SDK accepted the event.</p>
+        <div id="activity" class="activity" aria-live="polite"></div>
+        <p><button id="clear-log" class="secondary" type="button">Clear activity</button></p>
+      </section>
+    </aside>
+  </main>
+  <div id="toast" class="toast" role="status"></div>
+
+  <script id="workshop-data" type="application/json">__WORKSHOP_DATA__</script>
+  <script id="amplitude-adapter">
+    (function(){
+      window.createWorkshopAmplitudeAdapter = function(sdk){
+        return {
+          init(apiKey,userId,options){return sdk.init(apiKey,userId||undefined,options).promise},
+          async identify(userId,properties){
+            sdk.setUserId(userId);
+            const identifyEvent=new sdk.Identify();
+            Object.entries(properties).forEach(([key,value])=>{if(value)identifyEvent.set(key,value)});
+            return sdk.identify(identifyEvent).promise;
+          },
+          track(eventName,properties){return sdk.track(eventName,properties).promise}
+        };
+      };
+    })();
+  </script>
+  <script>
+    const WORKSHOP = JSON.parse(document.querySelector('#workshop-data').textContent);
+    const ACTIONS = Object.fromEntries(WORKSHOP.actions.map(action => [action.id, action]));
+    const params = new URLSearchParams(location.search);
+    const $ = selector => document.querySelector(selector);
+    const defaultTasks = [
+      {id:'task-welcome',title:'Design the tracking plan',done:false,createdAt:Date.now()-180000},
+      {id:'task-connect',title:'Connect the Amplitude project',done:false,createdAt:Date.now()-120000},
+      {id:'task-check',title:'Inspect the first event',done:true,createdAt:Date.now()-60000}
+    ];
+    let tasks = decodeState(params.get('tasks')) || defaultTasks;
+    let filter = ['all','active','completed'].includes(params.get('filter')) ? params.get('filter') : 'all';
+    let connected = false;
+    let connectedKey = '';
+    let sdkPromise = null;
+    let amplitudeClient = null;
+    let logs = [];
+    let entryMethod = 'keyboard';
+
+    // The project API key stays out of the URL: it would otherwise ride along in
+    // browser history and in every share link an attendee copies.
+    const keyStore = {
+      read(){try{return sessionStorage.getItem('workshop_api_key')||''}catch{return''}},
+      write(value){try{value?sessionStorage.setItem('workshop_api_key',value):sessionStorage.removeItem('workshop_api_key')}catch{}}
+    };
+
+    function encodeState(value){
+      const bytes = new TextEncoder().encode(JSON.stringify(value));
+      let binary = ''; bytes.forEach(byte => binary += String.fromCharCode(byte));
+      return btoa(binary).replaceAll('+','-').replaceAll('/','_').replaceAll('=','');
+    }
+    function decodeState(value){
+      if(!value) return null;
+      try{const base=value.replaceAll('-','+').replaceAll('_','/');const binary=atob(base);const bytes=Uint8Array.from(binary,c=>c.charCodeAt(0));return JSON.parse(new TextDecoder().decode(bytes))}catch{return null}
+    }
+    function uid(){return 'analyst-'+crypto.getRandomValues(new Uint32Array(1))[0].toString(36)}
+    function taskId(){return 'task-'+crypto.getRandomValues(new Uint32Array(1))[0].toString(36)}
+    function age(task){return Math.max(0,Math.round((Date.now()-task.createdAt)/1000))}
+    function eventName(id){return params.get('event_'+id) || ACTIONS[id].event_name}
+    function isTracked(id){return params.get('off_'+id)!=='1'}
+    function setParam(name,value,emptyRemoves=true){if(emptyRemoves && !value)params.delete(name);else params.set(name,String(value))}
+    function syncUrl(){
+      setParam('tasks',encodeState(tasks),false);setParam('filter',filter==='all'?'':filter);
+      params.delete('apiKey');setParam('region',$('#region').value==='US'?'':$('#region').value);
+      setParam('userId',$('#user-id').value.trim());setParam('role',$('#role').value.trim());setParam('experience',$('#experience').value);setParam('table',$('#table').value.trim());
+      history.replaceState(null,'',location.pathname+(params.toString()?'?'+params.toString():'')+location.hash);
+    }
+    function toast(message){const el=$('#toast');el.textContent=message;el.classList.add('on');clearTimeout(toast.timer);toast.timer=setTimeout(()=>el.classList.remove('on'),1800)}
+    function log(kind,title,payload){logs.unshift({kind,title,payload,time:new Date().toLocaleTimeString()});logs=logs.slice(0,80);renderLog()}
+    function renderLog(){const el=$('#activity');if(!logs.length){el.innerHTML='<div class="empty">Use the app to see an event payload.</div>';return}el.innerHTML=logs.map(item=>`<div class="log ${item.kind}"><div class="log-head"><b>${escapeText(item.title)}</b><span>${item.time}</span></div><pre>${escapeText(JSON.stringify(item.payload,null,2))}</pre></div>`).join('')}
+    function escapeText(value){return String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;')}
+    function visibleTasks(){return tasks.filter(task=>filter==='all'||(filter==='active'&&!task.done)||(filter==='completed'&&task.done))}
+    function renderTasks(){
+      const visible=visibleTasks();
+      $('#tasks').innerHTML=visible.length?visible.map(task=>`<li class="task ${task.done?'done':''}" data-id="${task.id}"><input type="checkbox" ${task.done?'checked':''} aria-label="Mark ${escapeText(task.title)} ${task.done?'active':'complete'}"><span class="task-title">${escapeText(task.title)}</span><span class="task-actions"><button class="icon-btn edit" type="button" aria-label="Edit ${escapeText(task.title)}">Edit</button><button class="icon-btn delete" type="button" aria-label="Delete ${escapeText(task.title)}">Delete</button></span></li>`).join(''):'<li class="empty">No tasks in this view.</li>';
+      $('#task-count').textContent=tasks.filter(t=>!t.done).length+' active · '+tasks.length+' total';
+      document.querySelectorAll('[data-filter]').forEach(button=>button.classList.toggle('on',button.dataset.filter===filter));
+      syncUrl();
+    }
+    function renderPlan(){
+      $('#plan').innerHTML=WORKSHOP.actions.map(action=>`<div class="plan-row ${isTracked(action.id)?'':'off'}" data-row-id="${action.id}"><input type="checkbox" data-toggle-id="${action.id}" ${isTracked(action.id)?'checked':''} aria-label="Track ${escapeText(action.user_action)}"><label for="event-${action.id}">${escapeText(action.user_action)}</label><input type="text" id="event-${action.id}" data-event-id="${action.id}" value="${escapeText(eventName(action.id))}" aria-label="Event name for ${escapeText(action.user_action)}"><div class="prop-list">${action.properties.map(p=>`<span class="chip">${escapeText(p.name)}: ${escapeText(p.type)}</span>`).join('')}</div></div>`).join('');
+    }
+    function actionPayload(id,context){
+      const common={};
+      if(id==='task-created')Object.assign(common,{task_id:context.task.id,task_length:context.task.title.length,list_size:tasks.length,entry_method:context.entryMethod||'button'});
+      if(id==='task-completed')Object.assign(common,{task_id:context.task.id,task_position:context.position,age_seconds:age(context.task),list_size:tasks.length});
+      if(id==='task-reopened')Object.assign(common,{task_id:context.task.id,age_seconds:age(context.task),list_size:tasks.length});
+      if(id==='task-edited')Object.assign(common,{task_id:context.task.id,length_before:context.before.length,length_after:context.task.title.length,age_seconds:age(context.task)});
+      if(id==='task-deleted')Object.assign(common,{task_id:context.task.id,was_completed:context.task.done,age_seconds:age(context.task),list_size:tasks.length});
+      if(id==='filter-changed')Object.assign(common,{filter,visible_task_count:visibleTasks().length});
+      if(id==='list-shared'||id==='shared-list-opened')Object.assign(common,{task_count:tasks.length,completed_task_count:tasks.filter(t=>t.done).length},id==='list-shared'?{share_method:'copy_link'}:{source:'share_link'});
+      return common;
+    }
+    async function emit(id,context={}){
+      const name=eventName(id).trim();const properties=actionPayload(id,context);
+      if(!isTracked(id)){log('warn','Not tracked · '+ACTIONS[id].user_action,{decision:'untracked in your plan',would_have_sent:name});return {untracked:true}}
+      log(connected?'ok':'warn',connected?'Sending '+name:'Preview · '+name,{event_type:name,event_properties:properties,user_id:$('#user-id').value.trim()});
+      if(!connected)return {preview:true};
+      try{const result=await amplitudeClient.track(name,properties);log(result&&result.code===200?'ok':'warn','SDK response · '+name,{code:result&&result.code,message:result&&result.message,event:result&&result.event});return result}catch(error){log('warn','SDK error · '+name,{message:error.message});return {error:error.message}}
+    }
+    function loadSdk(){
+      if(window.amplitude)return Promise.resolve(window.amplitude);if(sdkPromise)return sdkPromise;
+      sdkPromise=new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='https://cdn.amplitude.com/libs/analytics-browser-2.45.8-min.js.gz';script.onload=()=>window.amplitude?resolve(window.amplitude):reject(new Error('SDK loaded without amplitude global'));script.onerror=()=>reject(new Error('Amplitude SDK was blocked or unavailable'));document.head.appendChild(script)});return sdkPromise;
+    }
+    async function connect(){
+      const apiKey=$('#api-key').value.trim();if(!apiKey){toast('Paste a project API key first');return}
+      keyStore.write(apiKey);syncUrl();$('#connect').disabled=true;$('#connect').textContent='Connecting…';
+      try{
+        await loadSdk();const options={defaultTracking:false,logLevel:window.amplitude.Types.LogLevel.Warn};if($('#region').value==='EU')options.serverZone='EU';
+        amplitudeClient=window.createWorkshopAmplitudeAdapter(window.amplitude);const result=await amplitudeClient.init(apiKey,$('#user-id').value.trim(),options);connected=true;connectedKey=apiKey;setConnection(true);log('ok','Amplitude connected',{code:result&&result.code,region:$('#region').value,user_id:$('#user-id').value.trim(),defaultTracking:false});await identify();
+        if(params.get('shared')==='1'&&params.get('opened')!=='1'){await emit('shared-list-opened');params.set('opened','1');syncUrl()}
+      }catch(error){connected=false;setConnection(false);log('warn','Connection failed',{message:error.message});toast('Connection failed. Check Activity.')}
+      finally{$('#connect').disabled=false;$('#connect').textContent='Connect Amplitude'}
+    }
+    function setConnection(isConnected){const el=$('#connection-status');el.classList.toggle('connected',isConnected);el.querySelector('span').textContent=isConnected?'Connected to Amplitude':'Preview mode'}
+    async function identify(){
+      syncUrl();const props={role:$('#role').value.trim(),analytics_experience:$('#experience').value,workshop_table:$('#table').value.trim()};
+      log(connected?'ok':'warn',connected?'Sending user properties':'Preview · user properties',{user_id:$('#user-id').value.trim(),user_properties:props});if(!connected)return;
+      try{const result=await amplitudeClient.identify($('#user-id').value.trim(),props);log(result&&result.code===200?'ok':'warn','SDK response · Identify',{code:result&&result.code,message:result&&result.message})}catch(error){log('warn','SDK error · Identify',{message:error.message})}
+    }
+
+    // Implicit form submission sets event.submitter to the default button, so the
+    // submit event can't tell Enter from a click. Track the real entry point instead.
+    $('#add-button').addEventListener('pointerdown',()=>{entryMethod='button'});
+    $('#new-task').addEventListener('keydown',event=>{if(event.key==='Enter')entryMethod='keyboard'});
+    $('#add-form').addEventListener('submit',async event=>{event.preventDefault();const input=$('#new-task'),title=input.value.trim();if(!title)return;const task={id:taskId(),title,done:false,createdAt:Date.now()};tasks.push(task);input.value='';renderTasks();await emit('task-created',{task,entryMethod})});
+    $('#tasks').addEventListener('change',async event=>{if(!event.target.matches('input[type=checkbox]'))return;const row=event.target.closest('.task'),task=tasks.find(t=>t.id===row.dataset.id),position=visibleTasks().indexOf(task)+1;task.done=event.target.checked;renderTasks();await emit(task.done?'task-completed':'task-reopened',{task,position})});
+    $('#tasks').addEventListener('click',async event=>{const row=event.target.closest('.task');if(!row)return;const task=tasks.find(t=>t.id===row.dataset.id);if(event.target.closest('.edit')){const before=task.title,next=prompt('Edit task',before);if(next===null||!next.trim()||next.trim()===before)return;task.title=next.trim().slice(0,120);renderTasks();await emit('task-edited',{task,before})}if(event.target.closest('.delete')){tasks=tasks.filter(t=>t.id!==task.id);renderTasks();await emit('task-deleted',{task})}});
+    document.querySelectorAll('[data-filter]').forEach(button=>button.addEventListener('click',async()=>{filter=button.dataset.filter;renderTasks();await emit('filter-changed')}));
+    // A share link carries the list and the plan, never the key or the sharer's profile.
+    // Whoever opens it connects their own project, so their events land in it.
+    $('#share').addEventListener('click',async()=>{await emit('list-shared');const share=new URL(location.href);share.searchParams.set('tasks',encodeState(tasks));share.searchParams.set('shared','1');['opened','apiKey','userId','role','experience','table'].forEach(name=>share.searchParams.delete(name));try{await navigator.clipboard.writeText(share.href);toast('Share link copied')}catch{prompt('Copy this link',share.href)}});
+    $('#connect').addEventListener('click',()=>{if(connected&&connectedKey!==$('#api-key').value.trim()){syncUrl();location.reload()}else connect()});
+    $('#disconnect').addEventListener('click',()=>{$('#api-key').value='';keyStore.write('');params.delete('apiKey');params.delete('opened');syncUrl();location.reload()});
+    $('#identify').addEventListener('click',identify);
+    $('#plan').addEventListener('change',event=>{
+      const toggle=event.target.closest('[data-toggle-id]');
+      if(toggle){const id=toggle.dataset.toggleId;if(toggle.checked)params.delete('off_'+id);else params.set('off_'+id,'1');$('#plan').querySelector(`[data-row-id="${id}"]`).classList.toggle('off',!toggle.checked);syncUrl();return}
+      if(!event.target.matches('[data-event-id]'))return;
+      const id=event.target.dataset.eventId,value=event.target.value.trim();
+      if(!value){event.target.value=ACTIONS[id].event_name;params.delete('event_'+id)}else if(value===ACTIONS[id].event_name)params.delete('event_'+id);else params.set('event_'+id,value);
+      syncUrl();
+    });
+    $('#reset-plan').addEventListener('click',()=>{WORKSHOP.actions.forEach(a=>{params.delete('event_'+a.id);params.delete('off_'+a.id)});renderPlan();syncUrl();toast('Reference plan restored')});
+    $('#clear-log').addEventListener('click',()=>{logs=[];renderLog()});
+    ['#region','#user-id','#role','#experience','#table'].forEach(selector=>$(selector).addEventListener('change',syncUrl));
+    $('#api-key').addEventListener('change',()=>{keyStore.write($('#api-key').value.trim());syncUrl()});
+
+    const urlKey=(params.get('apiKey')||'').trim();if(urlKey)keyStore.write(urlKey);
+    $('#api-key').value=keyStore.read();$('#region').value=params.get('region')||'US';$('#user-id').value=params.get('userId')||uid();$('#role').value=params.get('role')||'digital analyst';$('#experience').value=params.get('experience')||'intermediate';$('#table').value=params.get('table')||'';
+    renderPlan();renderTasks();renderLog();
+    if($('#api-key').value)connect();
+  </script>
+</body>
+</html>

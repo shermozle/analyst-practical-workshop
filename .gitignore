@@ -1,0 +1,8 @@
+node_modules/
+.DS_Store
+*.log
+
+# Local authoring reference only. The Experiment Basics deck is a 4.6 MB bundled
+# HTML file kept as the visual reference for the factory; it isn't part of any
+# published pack. Remove this line if you want it in the repository.
+examples/

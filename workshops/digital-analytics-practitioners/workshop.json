@@ -654,7 +654,7 @@
         "Use the generated analyst ID instead of an email address",
         "Choose US or EU to match the Amplitude project"
       ],
-      "notes": "Keep this visible during connection. The API key is a public client-side identifier. The app stores exercise state in the URL, so participants should still avoid putting personal or secret values into the fields."
+      "notes": "Keep this visible during connection. The API key is a public client-side identifier, and the app keeps it in the browser tab rather than the URL, so a share link never carries it. The exercise state does live in the URL, so attendees should still keep personal and secret values out of every field."
     },
     {
       "id": "station-4",

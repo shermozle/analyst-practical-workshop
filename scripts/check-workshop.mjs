@@ -87,11 +87,15 @@ if (files["slides.html"]) {
   pass(files["slides.html"].includes("requestFullscreen"), "Deck needs a full-screen control.");
   pass(files["slides.html"].includes("@media print"), "Deck needs a print stylesheet.");
   pass(files["slides.html"].includes(workshop.hub_url), "Deck doesn't print the published hub URL.");
-  // The room scans this off the first slide, so it has to be inlined and present.
-  pass(files["slides.html"].includes('<figure class="cover-qr"><img src="data:image/png;base64,'),
-    "The cover slide has no inlined QR code. Put a PNG at workshops/<id>/assets/hub-qr.png.");
+  // The room scans these, so every slide that claims a QR has to render one inline.
+  const qrSlides = workshop.slides.filter((slide) => slide.qr);
+  const rendered = (files["slides.html"].match(/<figure class="cover-qr"><img src="data:image\/png;base64,/g) || []).length;
+  pass(qrSlides.length >= 1, "No slide carries the hub QR. Set qr: true on the cover at least.");
+  pass(rendered === qrSlides.length,
+    `${qrSlides.length} slides declare a QR but ${rendered} rendered. Check workshops/<id>/assets/hub-qr.png exists and the slide kind supports it.`);
+  pass(workshop.slides[0].qr === true, "The first slide must carry the QR.");
   pass(files["slides.html"].includes(`alt="QR code linking to ${workshop.hub_url}"`),
-    "The cover QR doesn't declare the hub URL it points at.");
+    "The QR doesn't declare the hub URL it points at.");
   // Click-to-advance must not fire while somebody is driving an interactive panel.
   if (workshop.slides.some((slide) => slide.kind === "identity-lab")) {
     pass(files["slides.html"].includes("data-interactive"), "Deck is missing the interactive identity panel.");
@@ -151,11 +155,12 @@ if (files["app.html"]) {
       }
     }
   }
-  // The key is a public client-side identifier, but it must not ride along in the
-  // URL: share links would carry it and the recipient would connect to the wrong project.
-  pass(!files["app.html"].includes("setParam('apiKey'"), "App writes the API key into the URL.");
-  pass(files["app.html"].includes("'apiKey'") && /forEach\(name=>share\.searchParams\.delete\(name\)\)/.test(files["app.html"]), "App share link must strip the API key and the sharer's profile.");
-  pass(files["app.html"].includes("sessionStorage"), "App must keep the API key in tab-scoped storage.");
+  // The URL is the whole state store: an attendee moves their setup between browsers
+  // and devices by copying the address bar, so every field has to be in there.
+  for (const param of ["apiKey", "deploymentKey", "userId", "role", "experience", "table", "tasks", "filter"]) {
+    pass(files["app.html"].includes(`setParam('${param}'`), `App doesn't carry ${param} in the URL.`);
+  }
+  pass(!files["app.html"].includes("sessionStorage"), "App state belongs in the URL, not tab-scoped storage.");
   // Attendees have this page open for an hour; presenter cues don't belong in it.
   for (const marker of ["LIVE DEMO", "CUT:", "GATE:", '"slides"']) {
     pass(!files["app.html"].includes(marker), `App contains presenter-only content: ${marker}.`);
@@ -176,9 +181,6 @@ if (files["app.html"]) {
     "Plugins must be added before init.");
   pass(files["app.html"].includes("workshop-wire-log"), "App is missing the wire log plugin.");
   pass(files["app.html"].includes(".experiment.js"), "App doesn't load Web Experiment.");
-  // The deployment key gets the same treatment as the API key.
-  pass(files["app.html"].includes("params.delete('deploymentKey')"), "App must keep the deployment key out of the URL.");
-  pass(files["app.html"].includes("'deploymentKey'"), "App share link must strip the deployment key.");
   const forbiddenProperties = ["task_title", "task_text", "task_content", "email"];
   for (const property of forbiddenProperties) {
     const declared = workshop.actions.some((action) =>

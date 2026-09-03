@@ -32,7 +32,7 @@
           <label class="field"><span>Project region</span><select id="region"><option value="US">US</option><option value="EU">EU</option></select></label>
           <div class="wide"><button id="connect" class="primary" type="button">Connect Amplitude</button> <button id="disconnect" class="secondary" type="button">Clear connection</button></div>
         </div>
-        <div class="callout">The project API key is intended for client-side use. It stays in this browser tab and is kept out of the URL, so a share link never carries it. Don't enter a secret key, email address, task contents, or other private data.</div>
+        <div class="callout">Everything lives in the page URL, keys included, so copying the address bar moves your whole setup to another browser or device. Anyone with the link can send events to your project. Use a project API key, not a secret key.</div>
         <h3>Session Replay and Web Experiment</h3>
         <div class="connection-grid">
           <label class="field wide"><span>Web Experiment deployment key (optional)</span><input id="deployment-key" autocomplete="off" spellcheck="false" placeholder="Leave empty unless you have a deployment"></label>
@@ -108,12 +108,6 @@
     let logs = [];
     let entryMethod = 'keyboard';
 
-    // Keys stay out of the URL: they would otherwise ride along in browser history
-    // and in every share link an attendee copies.
-    const keyStore = {
-      read(name){try{return sessionStorage.getItem('workshop_'+name)||''}catch{return''}},
-      write(name,value){try{value?sessionStorage.setItem('workshop_'+name,value):sessionStorage.removeItem('workshop_'+name)}catch{}}
-    };
     const SDK_URL='https://cdn.amplitude.com/libs/analytics-browser-2.45.8-min.js.gz';
     const REPLAY_URL='https://cdn.amplitude.com/libs/plugin-session-replay-browser-1.35.0-min.js.gz';
     const scripts={};
@@ -172,7 +166,7 @@
     function setParam(name,value,emptyRemoves=true){if(emptyRemoves && !value)params.delete(name);else params.set(name,String(value))}
     function syncUrl(){
       setParam('tasks',encodeState(tasks),false);setParam('filter',filter==='all'?'':filter);
-      params.delete('apiKey');params.delete('deploymentKey');setParam('region',$('#region').value==='US'?'':$('#region').value);
+      setParam('apiKey',$('#api-key').value.trim());setParam('deploymentKey',$('#deployment-key').value.trim());setParam('region',$('#region').value==='US'?'':$('#region').value);
       setParam('userId',$('#user-id').value.trim());setParam('role',$('#role').value.trim());setParam('experience',$('#experience').value);setParam('table',$('#table').value.trim());
       history.replaceState(null,'',location.pathname+(params.toString()?'?'+params.toString():'')+location.hash);
     }
@@ -269,7 +263,6 @@
     async function addWebExperiment(){
       const key=$('#deployment-key').value.trim();
       if(!key)return;
-      keyStore.write('deployment_key',key);
       try{
         await loadScript('https://cdn.amplitude.com/script/'+encodeURIComponent(key)+'.experiment.js',null,'Web Experiment script was blocked, or the deployment key was rejected');
         log('ok','Web Experiment loaded',{deployment:'…'+key.slice(-6),note:'Variants apply to this page. Watch the wire log for $exposure.'});
@@ -277,7 +270,7 @@
     }
     async function connect(){
       const apiKey=$('#api-key').value.trim();if(!apiKey){toast('Paste a project API key first');return}
-      keyStore.write('api_key',apiKey);syncUrl();$('#connect').disabled=true;$('#connect').textContent='Connecting…';
+      syncUrl();$('#connect').disabled=true;$('#connect').textContent='Connecting…';
       try{
         await loadSdk();const options={defaultTracking:false,logLevel:window.amplitude.Types.LogLevel.Warn};if($('#region').value==='EU')options.serverZone='EU';
         await addSessionReplay();await addWireLog();
@@ -309,9 +302,9 @@
     document.querySelectorAll('[data-filter]').forEach(button=>button.addEventListener('click',async()=>{filter=button.dataset.filter;renderTasks();await emit('filter-changed')}));
     // A share link carries the list and the plan, never the key or the sharer's profile.
     // Whoever opens it connects their own project, so their events land in it.
-    $('#share').addEventListener('click',async()=>{await emit('list-shared');const share=new URL(location.href);share.searchParams.set('tasks',encodeState(tasks));share.searchParams.set('shared','1');['opened','apiKey','deploymentKey','userId','role','experience','table'].forEach(name=>share.searchParams.delete(name));try{await navigator.clipboard.writeText(share.href);toast('Share link copied')}catch{prompt('Copy this link',share.href)}});
+    $('#share').addEventListener('click',async()=>{await emit('list-shared');const share=new URL(location.href);share.searchParams.set('tasks',encodeState(tasks));share.searchParams.set('shared','1');share.searchParams.delete('opened');try{await navigator.clipboard.writeText(share.href);toast('Share link copied')}catch{prompt('Copy this link',share.href)}});
     $('#connect').addEventListener('click',()=>{if(connected&&connectedKey!==$('#api-key').value.trim()){syncUrl();location.reload()}else connect()});
-    $('#disconnect').addEventListener('click',()=>{$('#api-key').value='';keyStore.write('api_key','');keyStore.write('deployment_key','');params.delete('apiKey');params.delete('opened');syncUrl();location.reload()});
+    $('#disconnect').addEventListener('click',()=>{$('#api-key').value='';$('#deployment-key').value='';params.delete('apiKey');params.delete('deploymentKey');params.delete('opened');syncUrl();location.reload()});
     $('#identify').addEventListener('click',identify);
     function sameSet(a,b){return a.length===b.length&&a.every(name=>b.includes(name))}
     function updateSelection(id,name,on){
@@ -349,11 +342,9 @@
     $('#reset-plan').addEventListener('click',()=>{WORKSHOP.actions.forEach(a=>['event_','off_','props_','types_'].forEach(prefix=>params.delete(prefix+a.id)));params.delete('uprops');renderPlan();syncUrl();toast('Plan restored to how it shipped')});
     $('#clear-log').addEventListener('click',()=>{logs=[];renderLog()});
     ['#region','#user-id','#role','#experience','#table'].forEach(selector=>$(selector).addEventListener('change',syncUrl));
-    $('#api-key').addEventListener('change',()=>{keyStore.write('api_key',$('#api-key').value.trim());syncUrl()});
-    $('#deployment-key').addEventListener('change',()=>keyStore.write('deployment_key',$('#deployment-key').value.trim()));
+    ['#api-key','#deployment-key'].forEach(selector=>$(selector).addEventListener('change',syncUrl));
 
-    const urlKey=(params.get('apiKey')||'').trim();if(urlKey)keyStore.write('api_key',urlKey);
-    $('#api-key').value=keyStore.read('api_key');$('#deployment-key').value=keyStore.read('deployment_key');$('#region').value=params.get('region')||'US';$('#user-id').value=params.get('userId')||uid();$('#role').value=params.get('role')||'digital analyst';$('#experience').value=params.get('experience')||'intermediate';$('#table').value=params.get('table')||'';
+    $('#api-key').value=(params.get('apiKey')||'').trim();$('#deployment-key').value=(params.get('deploymentKey')||'').trim();$('#region').value=params.get('region')||'US';$('#user-id').value=params.get('userId')||uid();$('#role').value=params.get('role')||'digital analyst';$('#experience').value=params.get('experience')||'intermediate';$('#table').value=params.get('table')||'';
     renderPlan();renderTasks();renderLog();
     if($('#api-key').value)connect();
   </script>

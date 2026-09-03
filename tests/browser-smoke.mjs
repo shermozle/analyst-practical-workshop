@@ -2,16 +2,14 @@
 // whether entry_method actually reports "keyboard", whether a share link is clean,
 // or whether clicking the identity panel skips a slide. This can.
 import { createServer } from "node:http";
-import { spawn } from "node:child_process";
-import { readFile, mkdtemp, rm } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import { join, resolve, dirname } from "node:path";
-import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
+import { launchChrome } from "./chrome.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const workshopId = process.argv[2] || "digital-analytics-practitioners";
 const dist = join(root, "dist", workshopId);
-const CHROME = process.env.CHROME_PATH || "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 
 // ---------------------------------------------------------------- static server
 const types = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css" };
@@ -29,63 +27,8 @@ await new Promise((done) => server.listen(0, "127.0.0.1", done));
 const origin = `http://127.0.0.1:${server.address().port}`;
 
 // ------------------------------------------------------------------ CDP client
-const profile = await mkdtemp(join(tmpdir(), "workshop-chrome-"));
-const chrome = spawn(CHROME, [
-  "--headless=new", "--disable-gpu", "--no-sandbox", "--no-first-run", "--no-default-browser-check",
-  "--disable-extensions", "--window-size=1440,900", `--user-data-dir=${profile}`, "--remote-debugging-port=0",
-  "about:blank"
-], { stdio: ["ignore", "pipe", "pipe"] });
-
-const endpoint = await new Promise((done, fail) => {
-  const timer = setTimeout(() => fail(new Error("Chrome never reported a DevTools endpoint.")), 30000);
-  let buffer = "";
-  chrome.stderr.on("data", (chunk) => {
-    buffer += chunk;
-    const match = buffer.match(/DevTools listening on (ws:\/\/\S+)/);
-    if (match) { clearTimeout(timer); done(match[1]); }
-  });
-  chrome.on("exit", (code) => { clearTimeout(timer); fail(new Error(`Chrome exited with ${code}.`)); });
-});
-
-const socket = new WebSocket(endpoint);
-await new Promise((done, fail) => { socket.onopen = done; socket.onerror = () => fail(new Error("Could not open the CDP socket.")); });
-const pending = new Map();
-let nextId = 0;
-socket.onmessage = (message) => {
-  const frame = JSON.parse(message.data);
-  if (frame.id === undefined || !pending.has(frame.id)) return;
-  const { done, fail } = pending.get(frame.id);
-  pending.delete(frame.id);
-  frame.error ? fail(new Error(`${frame.error.message} (${frame.method || ""})`)) : done(frame.result);
-};
-const send = (method, params = {}, sessionId) => new Promise((done, fail) => {
-  const id = ++nextId;
-  pending.set(id, { done, fail });
-  socket.send(JSON.stringify({ id, method, params, ...(sessionId ? { sessionId } : {}) }));
-});
-
-async function openPage(path) {
-  const { targetId } = await send("Target.createTarget", { url: `${origin}${path}` });
-  const { sessionId } = await send("Target.attachToTarget", { targetId, flatten: true });
-  await send("Runtime.enable", {}, sessionId);
-  for (let attempt = 0; attempt < 100; attempt += 1) {
-    const state = await evaluate(sessionId, "document.readyState");
-    if (state === "complete") break;
-    await new Promise((r) => setTimeout(r, 100));
-  }
-  await new Promise((r) => setTimeout(r, 250));
-  return { sessionId, targetId };
-}
-
-async function evaluate(sessionId, expression) {
-  const { result, exceptionDetails } = await send("Runtime.evaluate", {
-    expression, awaitPromise: true, returnByValue: true
-  }, sessionId);
-  if (exceptionDetails) {
-    throw new Error(exceptionDetails.exception?.description || exceptionDetails.text || "page threw");
-  }
-  return result.value;
-}
+const browser = await launchChrome({ width: 1440, height: 900 });
+const { openPage, evaluate } = browser;
 
 // -------------------------------------------------------------------- harnesses
 const APP_SCRIPT = `(async () => {
@@ -190,27 +133,29 @@ const APP_SCRIPT = `(async () => {
   await wait();
   results.correctedUserProperties = lastPayload().user_properties;
 
-  // The key lives in tab storage, never the URL.
-  const key = document.querySelector('#api-key');
-  key.value = 'testkey1234567890';
-  key.dispatchEvent(new Event('change', { bubbles: true }));
+  // Everything an attendee sets has to end up in the URL.
+  change(document.querySelector('#api-key'), 'testkey1234567890');
+  change(document.querySelector('#deployment-key'), 'deploy-abc123');
   await wait();
-  results.urlHasApiKey = /[?&]apiKey=/.test(location.search);
-  try { results.sessionKey = sessionStorage.getItem('workshop_api_key'); } catch (e) { results.sessionKey = 'THREW'; }
+  const live = new URLSearchParams(location.search);
+  results.urlApiKey = live.get('apiKey');
+  results.urlDeploymentKey = live.get('deploymentKey');
+  results.urlUserId = live.get('userId');
 
-  // A share link carries the list, not the key or the sharer's identity.
+  // A share link carries the sender's whole setup.
   let shared = null;
   Object.defineProperty(navigator, 'clipboard', { value: { writeText: async (text) => { shared = text; } }, configurable: true });
   document.querySelector('#share').click();
   await wait();
-  results.shareHasApiKey = /[?&]apiKey=/.test(shared || '');
-  results.shareHasUserId = /[?&]userId=/.test(shared || '');
-  results.shareHasRole = /[?&]role=/.test(shared || '');
-  results.shareHasTasks = /[?&]tasks=/.test(shared || '');
-  results.shareHasSharedFlag = /[?&]shared=1/.test(shared || '');
-
-  // The copied link must restore the same list.
-  const shareParams = new URLSearchParams(new URL(shared).search);
+  const shareParams = new URLSearchParams(new URL(shared || 'http://x/').search);
+  results.shareApiKey = shareParams.get('apiKey');
+  results.shareDeploymentKey = shareParams.get('deploymentKey');
+  results.shareUserId = shareParams.get('userId');
+  results.shareRole = shareParams.get('role');
+  results.shareHasTasks = shareParams.has('tasks');
+  results.shareHasSharedFlag = shareParams.get('shared') === '1';
+  results.shareEventName = shareParams.get('event_task-created');
+  results.shareProps = shareParams.get('props_task-created');
   const decode = (value) => JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(value.replaceAll('-', '+').replaceAll('_', '/')), c => c.charCodeAt(0))));
   results.shareTaskTitles = decode(shareParams.get('tasks')).map(t => t.title);
   results.liveTaskTitles = [...document.querySelectorAll('#tasks .task-title')].map(el => el.textContent);
@@ -318,12 +263,25 @@ const CONNECT_SCRIPT = `(async () => {
   return results;
 })()`;
 
+const OFFLINE_STUB = `
+  window.amplitude = {
+    Types: { LogLevel: { Warn: 2 } },
+    add: () => ({ promise: Promise.resolve() }),
+    init: () => ({ promise: Promise.resolve({ code: 200 }) }),
+    setUserId: () => {},
+    Identify: class { constructor() { this.values = {}; } set(k, v) { this.values[k] = v; return this; } },
+    identify: () => ({ promise: Promise.resolve({ code: 200 }) }),
+    track: () => ({ promise: Promise.resolve({ code: 200 }) })
+  };
+  window.sessionReplay = { plugin: (config) => ({ name: 'session-replay', type: 'enrichment', __config: config }) };
+`;
+
 // ----------------------------------------------------------------- assertions
 const failures = [];
 const expect = (condition, message) => { if (!condition) failures.push(message); };
 
 try {
-  const appPage = await openPage("/app.html");
+  const appPage = await openPage(`${origin}/app.html`);
   const app = await evaluate(appPage.sessionId, APP_SCRIPT);
 
   expect(app.planRows === 8, `Instrumentation panel shows ${app.planRows} rows, expected 8.`);
@@ -378,18 +336,22 @@ try {
   expect(!("last_filter" in fixedUser) && !("last_task_id" in fixedUser), "Unticking occurrence context left it on the user.");
   expect("role" in fixedUser, "Corrected user properties dropped role, which does belong on the person.");
 
-  expect(app.urlHasApiKey === false, "The API key reached the URL.");
-  expect(app.sessionKey === "testkey1234567890", `The API key wasn't stored in the tab (got ${app.sessionKey}).`);
-  expect(app.shareHasApiKey === false, "The share link carries the API key.");
-  expect(app.shareHasUserId === false, "The share link carries the sharer's user ID.");
-  expect(app.shareHasRole === false, "The share link carries the sharer's profile.");
+  expect(app.urlApiKey === "testkey1234567890", `The URL carries the API key as "${app.urlApiKey}".`);
+  expect(app.urlDeploymentKey === "deploy-abc123", `The URL carries the deployment key as "${app.urlDeploymentKey}".`);
+  expect(Boolean(app.urlUserId), "The URL doesn't carry the generated user ID.");
+  expect(app.shareApiKey === "testkey1234567890", "The share link doesn't carry the API key.");
+  expect(app.shareDeploymentKey === "deploy-abc123", "The share link doesn't carry the deployment key.");
+  expect(Boolean(app.shareUserId), "The share link doesn't carry the user ID.");
+  expect(Boolean(app.shareRole), "The share link doesn't carry the profile.");
+  expect(app.shareEventName === "Task Created", `The share link carries the corrected event name as "${app.shareEventName}".`);
+  expect(Boolean(app.shareProps), "The share link doesn't carry the corrected property selection.");
   expect(app.shareHasTasks === true, "The share link doesn't carry the list.");
   expect(app.shareHasSharedFlag === true, "The share link doesn't set shared=1.");
   expect(JSON.stringify(app.shareTaskTitles) === JSON.stringify(app.liveTaskTitles),
     `Share link doesn't round-trip the list: ${JSON.stringify(app.shareTaskTitles)} vs ${JSON.stringify(app.liveTaskTitles)}.`);
 
   // A copied link has to restore the corrected plan, not the shipped one.
-  const restored = await evaluate((await openPage(app.correctedUrl.replace(origin, ""))).sessionId, `({
+  const restored = await evaluate((await openPage(app.correctedUrl, { beforeLoad: OFFLINE_STUB })).sessionId, `({
     eventName: document.querySelector('#event-task-created').value,
     entryMethodOn: document.querySelector('[data-prop-action="task-created"][data-prop-name="entry_method"]').checked,
     roleOn: document.querySelector('[data-prop-action="task-created"][data-prop-name="role"]').checked,
@@ -397,7 +359,10 @@ try {
     filterEventName: document.querySelector('#event-filter-changed').value,
     filterPropOn: document.querySelector('[data-prop-action="filter-changed"][data-prop-name="filter"]').checked,
     workshopTableOn: document.querySelector('[data-uprop="workshop_table"]').checked,
-    lastFilterOn: document.querySelector('[data-uprop="last_filter"]').checked
+    lastFilterOn: document.querySelector('[data-uprop="last_filter"]').checked,
+    apiKey: document.querySelector('#api-key').value,
+    deploymentKey: document.querySelector('#deployment-key').value,
+    userId: document.querySelector('#user-id').value
   })`);
   expect(restored.eventName === "Task Created", `Reloading restored the event name as "${restored.eventName}".`);
   expect(restored.entryMethodOn === true, "Reloading lost the ticked entry_method property.");
@@ -407,13 +372,16 @@ try {
   expect(restored.filterPropOn === true, "Reloading lost the ticked filter property.");
   expect(restored.workshopTableOn === true, "Reloading lost the ticked workshop_table user property.");
   expect(restored.lastFilterOn === false, "Reloading brought back the unticked last_filter user property.");
+  expect(restored.apiKey === "testkey1234567890", `A copied link restored the API key as "${restored.apiKey}".`);
+  expect(restored.deploymentKey === "deploy-abc123", `A copied link restored the deployment key as "${restored.deploymentKey}".`);
+  expect(Boolean(restored.userId), "A copied link didn't restore the user ID.");
 
   expect(app.maskedTitles >= 1, "Task titles aren't marked amp-mask, so Session Replay would record them.");
   expect(app.maskedInput === true, "The new-task input isn't marked amp-mask.");
   expect(app.replayDefaultOn === true, "Session Replay should be ticked by default.");
   expect(app.hasDeploymentField === true, "The Web Experiment deployment key field is missing.");
 
-  const connect = await evaluate((await openPage("/app.html")).sessionId, CONNECT_SCRIPT);
+  const connect = await evaluate((await openPage(`${origin}/app.html`)).sessionId, CONNECT_SCRIPT);
   expect(
     JSON.stringify(connect.order) === JSON.stringify([
       "add:session-replay", "add:workshop-wire-log", "init", "setUserId", "identify"
@@ -433,7 +401,7 @@ try {
     "The wire log doesn't surface the replay ID that Session Replay stamps on the event.");
   expect(connect.wirePayload?.session_id === 17, "The wire log doesn't surface the session ID.");
 
-  const deckPage = await openPage("/slides.html");
+  const deckPage = await openPage(`${origin}/slides.html`);
   const deck = await evaluate(deckPage.sessionId, DECK_SCRIPT);
 
   expect(deck.slideOnLoad === "identity", `Hash link opened "${deck.slideOnLoad}" instead of the identity slide.`);
@@ -452,10 +420,8 @@ try {
   expect(/nobody to match/.test(deck.verdictNoId || ""), `No-user-ID verdict reads "${deck.verdictNoId}".`);
   expect(deck.overflowing.length === 0, `Slides overflow the 16:9 stage: ${deck.overflowing.join("; ")}.`);
 } finally {
-  socket.close();
-  chrome.kill("SIGKILL");
+  await browser.close();
   server.close();
-  await rm(profile, { recursive: true, force: true });
 }
 
 if (failures.length) {
@@ -463,4 +429,4 @@ if (failures.length) {
   failures.forEach((failure) => console.error(`- ${failure}`));
   process.exit(1);
 }
-console.log("Browser smoke passed: planted flaws arrive intact, every correction changes the payload and survives a reload, Session Replay and the wire log attach in order before init, plus key handling, share round-trip, identity panel, and slide fit.");
+console.log("Browser smoke passed: planted flaws arrive intact, every correction changes the payload, the full setup (keys, plan, profile, list) round-trips through the URL and a share link, Session Replay and the wire log attach in order before init, plus the identity panel and slide fit.");

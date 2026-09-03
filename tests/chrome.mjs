@@ -57,11 +57,17 @@ export async function launchChrome({ width = 1440, height = 900 } = {}) {
     return result.value;
   }
 
-  async function openPage(url) {
-    const { targetId } = await send("Target.createTarget", { url });
+  // `beforeLoad` runs before the page's own scripts, which is the only way to stub
+  // an SDK for a page that connects on load. That needs a blank target first.
+  async function openPage(url, { beforeLoad } = {}) {
+    const { targetId } = await send("Target.createTarget", { url: beforeLoad ? "about:blank" : url });
     const { sessionId } = await send("Target.attachToTarget", { targetId, flatten: true });
     await send("Runtime.enable", {}, sessionId);
     await send("Page.enable", {}, sessionId);
+    if (beforeLoad) {
+      await send("Page.addScriptToEvaluateOnNewDocument", { source: beforeLoad }, sessionId);
+      await send("Page.navigate", { url }, sessionId);
+    }
     for (let attempt = 0; attempt < 100; attempt += 1) {
       if (await evaluate(sessionId, "document.readyState") === "complete") break;
       await new Promise((r) => setTimeout(r, 100));

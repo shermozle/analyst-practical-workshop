@@ -97,8 +97,13 @@ overrun.
 
 ## Safety notes
 
-The app takes a **project API key**, which is a public client-side identifier. It's
-kept in tab-scoped storage rather than the URL, so it never travels in a share link or
-sits in browser history. Task text is never sent as an event property; length and age
-answer the exercise questions without collecting what somebody typed. Don't put a
-secret key, an email address, or personal data into any field.
+The app takes a **project API key**, which is a public client-side identifier. The
+whole exercise state lives in the URL — key, deployment key, tracking plan, profile,
+and list — so copying the address bar moves an attendee's entire setup to another
+browser or device. Anyone holding that link can send events to that project, so it
+belongs in a DM rather than a public channel. Don't put a secret key, an email
+address, or personal data into any field.
+
+Task text is never sent as an event property; length and age answer the exercise
+questions instead. Session Replay records the page, so it runs at the conservative
+privacy level with `amp-mask` on the task input and every task title.

@@ -569,7 +569,8 @@
       "kind": "cover",
       "title": "From questions to clean events",
       "subtitle": "A two-hour Amplitude workshop for digital analytics practitioners",
-      "notes": "Welcome the room. The first hour follows one analysis from a funnel into qualitative evidence, paths, activation, and an experiment. The second hour starts with a finished app. Attendees make the measurement decisions and then watch their events arrive in Amplitude."
+      "notes": "Welcome the room. The first hour follows one analysis from a funnel into qualitative evidence, paths, activation, and an experiment. The second hour starts with a finished app. Attendees make the measurement decisions and then watch their events arrive in Amplitude.",
+      "qr": true
     },
     {
       "id": "route",
@@ -729,7 +730,8 @@
         "To-do app",
         "New Amplitude project"
       ],
-      "notes": "Protect the remaining hour. Ask everyone to open the participant guide and app from the hub. The last station is optional."
+      "notes": "Protect the remaining hour. Ask everyone to open the participant guide and app from the hub. The last station is optional.",
+      "qr": true
     },
     {
       "id": "app-walkthrough",
@@ -835,7 +837,7 @@
         "Use the generated analyst ID instead of an email address",
         "Choose US or EU to match the Amplitude project"
       ],
-      "notes": "Keep this visible during connection. The API key is a public client-side identifier, and the app keeps it in the browser tab rather than the URL, so a share link never carries it. The exercise state does live in the URL, so attendees should still keep personal and secret values out of every field."
+      "notes": "Keep this visible during connection. The API key is a public client-side identifier, and the whole app state sits in the URL: key, tracking plan, profile, and list. Copying the address bar carries the lot to another browser or device, which is how somebody picks up where they left off or hands their setup to a partner. Anyone with the link can send events to that project, so it belongs in a DM rather than a public channel."
     },
     {
       "id": "replay-experiment",

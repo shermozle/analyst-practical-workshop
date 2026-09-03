@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Workshop to-do app</title>
   <style>
-    :root{--bg:#f2f4f8;--paper:#fff;--ink:#161922;--muted:#667083;--line:#dfe3eb;--brand:#3157d5;--brand2:#193591;--ok:#08785d;--warn:#b4540a;--bad:#b42318;--shadow:0 18px 50px rgba(26,35,62,.10)}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}button,input,select{font:inherit}button{cursor:pointer}.topbar{background:#101529;color:#fff;padding:13px 24px;display:flex;align-items:center;justify-content:space-between;gap:18px;position:sticky;top:0;z-index:5}.brand{font-weight:850;letter-spacing:-.02em}.topbar nav{display:flex;gap:9px;align-items:center;flex-wrap:wrap}.topbar a,.topbar button{color:#dfe5ff;background:transparent;border:1px solid #35405f;border-radius:8px;padding:7px 10px;text-decoration:none}.status{display:inline-flex;align-items:center;gap:7px;font-size:13px}.status i{width:8px;height:8px;border-radius:50%;background:#8690a8}.status.connected i{background:#2ed7a6}.layout{max-width:1440px;margin:auto;padding:24px;display:grid;grid-template-columns:minmax(0,1.45fr) minmax(360px,.75fr);gap:20px}.stack{display:grid;gap:20px;align-content:start}.panel{background:var(--paper);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:21px}.panel h1,.panel h2,.panel h3{margin:0 0 8px}.panel h1{font-size:32px;letter-spacing:-.035em}.panel h2{font-size:20px}.panel p{color:var(--muted);margin:6px 0 14px}.add-form{display:flex;gap:9px;margin:18px 0}.add-form input{flex:1}.field,input,select{border:1px solid #cbd1dd;border-radius:9px;background:#fff;color:#161922;padding:10px 11px;min-width:0}.field{display:grid;gap:5px}.field span{font-size:12px;font-weight:750;color:var(--muted)}.primary,.secondary,.danger,.icon-btn{border:0;border-radius:9px;padding:10px 14px;font-weight:750}.primary{background:var(--brand);color:#fff}.primary:hover{background:var(--brand2)}.secondary{background:#e9edfa;color:#21346d}.danger{background:#feeceb;color:var(--bad)}.icon-btn{padding:7px 9px;background:transparent;color:var(--muted)}.tasks{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}.task{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:13px 3px;border-bottom:1px solid var(--line)}.task input{width:20px;height:20px}.task-title{font-size:16px;overflow-wrap:anywhere}.task.done .task-title{text-decoration:line-through;color:#8a93a5}.task-actions{display:flex;gap:3px}.filters{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:16px}.filters button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 11px;color:var(--muted)}.filters button.on{background:#e7ecff;border-color:#a8b8f9;color:#2444ad}.filters .count{margin-left:auto;color:var(--muted)}.connection-grid,.profile-grid{display:grid;grid-template-columns:1fr 150px;gap:10px}.profile-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.wide{grid-column:1/-1}.small{font-size:12px;color:var(--muted)}.key-row{display:flex;gap:9px}.key-row .field{flex:1}.activity{height:420px;overflow:auto;background:#0d111a;color:#dce3f3;border-radius:10px;padding:10px;font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace}.log{border-bottom:1px solid #242c3b;padding:10px 7px}.log:last-child{border-bottom:0}.log-head{display:flex;justify-content:space-between;gap:10px;color:#93a2bd}.log b{color:#fff}.log pre{margin:7px 0 0;white-space:pre-wrap;overflow-wrap:anywhere;color:#b9c5da}.log.ok .log-head{color:#57ddb8}.log.warn .log-head{color:#ffb56f}.plan-row{display:grid;grid-template-columns:auto 150px minmax(0,1fr);gap:9px;align-items:center;padding:9px 0;border-top:1px solid var(--line)}.plan-row label{font-size:13px;color:var(--muted)}.plan-row input[type=text]{width:100%;padding:8px 9px}.plan-row input[type=checkbox]{width:18px;height:18px;margin:0}.plan-row.off{opacity:.48}.plan-row.off input[type=text]{text-decoration:line-through}.prop-list{grid-column:3;display:flex;flex-wrap:wrap;gap:5px}.chip{display:inline-flex;align-items:center;gap:6px;background:#eef1f7;border:1px solid #dfe3eb;border-radius:999px;padding:4px 9px;font:11px ui-monospace,SFMono-Regular,Menlo,monospace;color:#556078;cursor:pointer}.plan-row .chip input[type=checkbox],#user-plan .chip input[type=checkbox]{width:13px;height:13px;margin:0}.chip i{font-style:normal;color:#8a93a5}.chip select{font:11px ui-monospace,SFMono-Regular,Menlo,monospace;border:1px solid #cbd1dd;border-radius:6px;padding:1px 3px;background:#fff;color:#556078}.chip-off{opacity:.55;background:transparent;border-style:dashed}.chip-off span{text-decoration:line-through}.callout{border-radius:9px;padding:11px 12px;background:#fff3e8;color:#7a3705;font-size:13px;margin:12px 0}.privacy{background:#e9f6f2;color:#075a47}.drawer summary{cursor:pointer;font-weight:800}.drawer[open] summary{margin-bottom:15px}.empty{padding:30px;text-align:center;color:var(--muted)}.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#101529;color:#fff;padding:10px 14px;border-radius:9px;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:.18s}.toast.on{opacity:1}@media(max-width:980px){.layout{grid-template-columns:1fr}.activity{height:300px}}@media(max-width:600px){.layout{padding:12px}.topbar{padding:10px 12px;align-items:flex-start}.connection-grid,.profile-grid{grid-template-columns:1fr}.plan-row{grid-template-columns:auto minmax(0,1fr)}.prop-list{grid-column:1/-1}.task-actions{flex-direction:column}.filters .count{width:100%;margin-left:0}}
+    :root{--bg:#f2f4f8;--paper:#fff;--ink:#161922;--muted:#667083;--line:#dfe3eb;--brand:#3157d5;--brand2:#193591;--ok:#08785d;--warn:#b4540a;--bad:#b42318;--shadow:0 18px 50px rgba(26,35,62,.10)}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}button,input,select{font:inherit}button{cursor:pointer}.topbar{background:#101529;color:#fff;padding:13px 24px;display:flex;align-items:center;justify-content:space-between;gap:18px;position:sticky;top:0;z-index:5}.brand{font-weight:850;letter-spacing:-.02em}.topbar nav{display:flex;gap:9px;align-items:center;flex-wrap:wrap}.topbar a,.topbar button{color:#dfe5ff;background:transparent;border:1px solid #35405f;border-radius:8px;padding:7px 10px;text-decoration:none}.status{display:inline-flex;align-items:center;gap:7px;font-size:13px}.status i{width:8px;height:8px;border-radius:50%;background:#8690a8}.status.connected i{background:#2ed7a6}.layout{max-width:1440px;margin:auto;padding:24px;display:grid;grid-template-columns:minmax(0,1.45fr) minmax(360px,.75fr);gap:20px}.stack{display:grid;gap:20px;align-content:start}.panel{background:var(--paper);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:21px}.panel h1,.panel h2,.panel h3{margin:0 0 8px}.panel h1{font-size:32px;letter-spacing:-.035em}.panel h2{font-size:20px}.panel p{color:var(--muted);margin:6px 0 14px}.add-form{display:flex;gap:9px;margin:18px 0}.add-form input{flex:1}.field,input,select{border:1px solid #cbd1dd;border-radius:9px;background:#fff;color:#161922;padding:10px 11px;min-width:0}.field{display:grid;gap:5px}.field span{font-size:12px;font-weight:750;color:var(--muted)}.primary,.secondary,.danger,.icon-btn{border:0;border-radius:9px;padding:10px 14px;font-weight:750}.primary{background:var(--brand);color:#fff}.primary:hover{background:var(--brand2)}.secondary{background:#e9edfa;color:#21346d}.danger{background:#feeceb;color:var(--bad)}.icon-btn{padding:7px 9px;background:transparent;color:var(--muted)}.tasks{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}.task{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:13px 3px;border-bottom:1px solid var(--line)}.task input{width:20px;height:20px}.task-title{font-size:16px;overflow-wrap:anywhere}.task.done .task-title{text-decoration:line-through;color:#8a93a5}.task-actions{display:flex;gap:3px}.filters{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:16px}.filters button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 11px;color:var(--muted)}.filters button.on{background:#e7ecff;border-color:#a8b8f9;color:#2444ad}.filters .count{margin-left:auto;color:var(--muted)}.connection-grid,.profile-grid{display:grid;grid-template-columns:1fr 150px;gap:10px}.profile-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.wide{grid-column:1/-1}.small{font-size:12px;color:var(--muted)}.key-row{display:flex;gap:9px}.key-row .field{flex:1}.switch{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--muted);cursor:pointer}.switch input{width:17px;height:17px;margin:0;flex:none}.activity{height:420px;overflow:auto;background:#0d111a;color:#dce3f3;border-radius:10px;padding:10px;font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace}.log{border-bottom:1px solid #242c3b;padding:10px 7px}.log:last-child{border-bottom:0}.log-head{display:flex;justify-content:space-between;gap:10px;color:#93a2bd}.log b{color:#fff}.log pre{margin:7px 0 0;white-space:pre-wrap;overflow-wrap:anywhere;color:#b9c5da}.log.ok .log-head{color:#57ddb8}.log.warn .log-head{color:#ffb56f}.plan-row{display:grid;grid-template-columns:auto 150px minmax(0,1fr);gap:9px;align-items:center;padding:9px 0;border-top:1px solid var(--line)}.plan-row label{font-size:13px;color:var(--muted)}.plan-row input[type=text]{width:100%;padding:8px 9px}.plan-row input[type=checkbox]{width:18px;height:18px;margin:0}.plan-row.off{opacity:.48}.plan-row.off input[type=text]{text-decoration:line-through}.prop-list{grid-column:3;display:flex;flex-wrap:wrap;gap:5px}.chip{display:inline-flex;align-items:center;gap:6px;background:#eef1f7;border:1px solid #dfe3eb;border-radius:999px;padding:4px 9px;font:11px ui-monospace,SFMono-Regular,Menlo,monospace;color:#556078;cursor:pointer}.plan-row .chip input[type=checkbox],#user-plan .chip input[type=checkbox]{width:13px;height:13px;margin:0}.chip i{font-style:normal;color:#8a93a5}.chip select{font:11px ui-monospace,SFMono-Regular,Menlo,monospace;border:1px solid #cbd1dd;border-radius:6px;padding:1px 3px;background:#fff;color:#556078}.chip-off{opacity:.55;background:transparent;border-style:dashed}.chip-off span{text-decoration:line-through}.callout{border-radius:9px;padding:11px 12px;background:#fff3e8;color:#7a3705;font-size:13px;margin:12px 0}.privacy{background:#e9f6f2;color:#075a47}.drawer summary{cursor:pointer;font-weight:800}.drawer[open] summary{margin-bottom:15px}.empty{padding:30px;text-align:center;color:var(--muted)}.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#101529;color:#fff;padding:10px 14px;border-radius:9px;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:.18s}.toast.on{opacity:1}@media(max-width:980px){.layout{grid-template-columns:1fr}.activity{height:300px}}@media(max-width:600px){.layout{padding:12px}.topbar{padding:10px 12px;align-items:flex-start}.connection-grid,.profile-grid{grid-template-columns:1fr}.plan-row{grid-template-columns:auto minmax(0,1fr)}.prop-list{grid-column:1/-1}.task-actions{flex-direction:column}.filters .count{width:100%;margin-left:0}}
   </style>
 </head>
 <body>
@@ -19,7 +19,7 @@
       <section class="panel">
         <h1>Things to do</h1>
         <p>The list state lives in the URL. Add, complete, edit, filter, delete, and share tasks while the Activity panel shows the event payload.</p>
-        <form id="add-form" class="add-form"><input id="new-task" maxlength="120" autocomplete="off" placeholder="Add a task" aria-label="New task"><button id="add-button" class="primary" type="submit">Add task</button></form>
+        <form id="add-form" class="add-form"><input id="new-task" class="amp-mask" maxlength="120" autocomplete="off" placeholder="Add a task" aria-label="New task"><button id="add-button" class="primary" type="submit">Add task</button></form>
         <ul id="tasks" class="tasks"></ul>
         <div class="filters" aria-label="Task filters"><button type="button" data-filter="all">All</button><button type="button" data-filter="active">Active</button><button type="button" data-filter="completed">Completed</button><span id="task-count" class="count"></span></div>
       </section>
@@ -33,6 +33,12 @@
           <div class="wide"><button id="connect" class="primary" type="button">Connect Amplitude</button> <button id="disconnect" class="secondary" type="button">Clear connection</button></div>
         </div>
         <div class="callout">The project API key is intended for client-side use. It stays in this browser tab and is kept out of the URL, so a share link never carries it. Don't enter a secret key, email address, task contents, or other private data.</div>
+        <h3>Session Replay and Web Experiment</h3>
+        <div class="connection-grid">
+          <label class="field wide"><span>Web Experiment deployment key (optional)</span><input id="deployment-key" autocomplete="off" spellcheck="false" placeholder="Leave empty unless you have a deployment"></label>
+          <label class="switch wide"><input type="checkbox" id="session-replay" checked><span>Capture Session Replay at 100%, with every text node masked</span></label>
+        </div>
+        <div class="callout privacy">Session Replay records the page, so masking is instrumentation too. This app runs the conservative privacy level and marks the task list <code>amp-mask</code>, which means replays show the shape of what somebody did without the words they typed.</div>
         <h3>Workshop profile</h3>
         <div class="profile-grid">
           <label class="field"><span>Generated user ID</span><input id="user-id" spellcheck="false"></label>
@@ -58,7 +64,7 @@
     <aside class="stack">
       <section class="panel">
         <h2>Activity</h2>
-        <p>Preview payloads appear before connection. After connection, the response shows whether the SDK accepted the event.</p>
+        <p>Preview payloads appear before connection. Once connected you also get <b>Wire</b> entries, which are the events as they actually leave the browser: session, replay ID, and anything a plugin added.</p>
         <div id="activity" class="activity" aria-live="polite"></div>
         <p><button id="clear-log" class="secondary" type="button">Clear activity</button></p>
       </section>
@@ -102,12 +108,15 @@
     let logs = [];
     let entryMethod = 'keyboard';
 
-    // The project API key stays out of the URL: it would otherwise ride along in
-    // browser history and in every share link an attendee copies.
+    // Keys stay out of the URL: they would otherwise ride along in browser history
+    // and in every share link an attendee copies.
     const keyStore = {
-      read(){try{return sessionStorage.getItem('workshop_api_key')||''}catch{return''}},
-      write(value){try{value?sessionStorage.setItem('workshop_api_key',value):sessionStorage.removeItem('workshop_api_key')}catch{}}
+      read(name){try{return sessionStorage.getItem('workshop_'+name)||''}catch{return''}},
+      write(name,value){try{value?sessionStorage.setItem('workshop_'+name,value):sessionStorage.removeItem('workshop_'+name)}catch{}}
     };
+    const SDK_URL='https://cdn.amplitude.com/libs/analytics-browser-2.45.8-min.js.gz';
+    const REPLAY_URL='https://cdn.amplitude.com/libs/plugin-session-replay-browser-1.35.0-min.js.gz';
+    const scripts={};
 
     function encodeState(value){
       const bytes = new TextEncoder().encode(JSON.stringify(value));
@@ -163,7 +172,7 @@
     function setParam(name,value,emptyRemoves=true){if(emptyRemoves && !value)params.delete(name);else params.set(name,String(value))}
     function syncUrl(){
       setParam('tasks',encodeState(tasks),false);setParam('filter',filter==='all'?'':filter);
-      params.delete('apiKey');setParam('region',$('#region').value==='US'?'':$('#region').value);
+      params.delete('apiKey');params.delete('deploymentKey');setParam('region',$('#region').value==='US'?'':$('#region').value);
       setParam('userId',$('#user-id').value.trim());setParam('role',$('#role').value.trim());setParam('experience',$('#experience').value);setParam('table',$('#table').value.trim());
       history.replaceState(null,'',location.pathname+(params.toString()?'?'+params.toString():'')+location.hash);
     }
@@ -174,7 +183,7 @@
     function visibleTasks(){return tasks.filter(task=>filter==='all'||(filter==='active'&&!task.done)||(filter==='completed'&&task.done))}
     function renderTasks(){
       const visible=visibleTasks();
-      $('#tasks').innerHTML=visible.length?visible.map(task=>`<li class="task ${task.done?'done':''}" data-id="${task.id}"><input type="checkbox" ${task.done?'checked':''} aria-label="Mark ${escapeText(task.title)} ${task.done?'active':'complete'}"><span class="task-title">${escapeText(task.title)}</span><span class="task-actions"><button class="icon-btn edit" type="button" aria-label="Edit ${escapeText(task.title)}">Edit</button><button class="icon-btn delete" type="button" aria-label="Delete ${escapeText(task.title)}">Delete</button></span></li>`).join(''):'<li class="empty">No tasks in this view.</li>';
+      $('#tasks').innerHTML=visible.length?visible.map(task=>`<li class="task ${task.done?'done':''}" data-id="${task.id}"><input type="checkbox" ${task.done?'checked':''} aria-label="Mark ${escapeText(task.title)} ${task.done?'active':'complete'}"><span class="task-title amp-mask">${escapeText(task.title)}</span><span class="task-actions"><button class="icon-btn edit" type="button" aria-label="Edit ${escapeText(task.title)}">Edit</button><button class="icon-btn delete" type="button" aria-label="Delete ${escapeText(task.title)}">Delete</button></span></li>`).join(''):'<li class="empty">No tasks in this view.</li>';
       $('#task-count').textContent=tasks.filter(t=>!t.done).length+' active · '+tasks.length+' total';
       document.querySelectorAll('[data-filter]').forEach(button=>button.classList.toggle('on',button.dataset.filter===filter));
       syncUrl();
@@ -218,16 +227,61 @@
       if(!connected)return {preview:true};
       try{const result=await amplitudeClient.track(name,properties);log(result&&result.code===200?'ok':'warn','SDK response · '+name,{code:result&&result.code,message:result&&result.message,event:result&&result.event});return result}catch(error){log('warn','SDK error · '+name,{message:error.message});return {error:error.message}}
     }
-    function loadSdk(){
-      if(window.amplitude)return Promise.resolve(window.amplitude);if(sdkPromise)return sdkPromise;
-      sdkPromise=new Promise((resolve,reject)=>{const script=document.createElement('script');script.src='https://cdn.amplitude.com/libs/analytics-browser-2.45.8-min.js.gz';script.onload=()=>window.amplitude?resolve(window.amplitude):reject(new Error('SDK loaded without amplitude global'));script.onerror=()=>reject(new Error('Amplitude SDK was blocked or unavailable'));document.head.appendChild(script)});return sdkPromise;
+    function loadScript(src,globalName,failure){
+      if(globalName&&window[globalName])return Promise.resolve(window[globalName]);
+      if(scripts[src])return scripts[src];
+      scripts[src]=new Promise((resolve,reject)=>{
+        const script=document.createElement('script');script.src=src;script.async=false;
+        script.onload=()=>globalName&&!window[globalName]?reject(new Error(globalName+' global missing after load')):resolve(globalName?window[globalName]:true);
+        script.onerror=()=>reject(new Error(failure));
+        document.head.appendChild(script);
+      });
+      return scripts[src];
+    }
+    function loadSdk(){return loadScript(SDK_URL,'amplitude','Amplitude SDK was blocked or unavailable')}
+
+    // Session Replay joins recordings to events by putting a replay ID on each one,
+    // so it has to be added before init. Masking is part of the instrumentation.
+    async function addSessionReplay(){
+      if(!$('#session-replay').checked){log('warn','Session Replay off',{reason:'unticked in the Connection panel'});return}
+      try{
+        await loadScript(REPLAY_URL,'sessionReplay','Session Replay plugin was blocked or unavailable');
+        const config={sampleRate:1,privacyConfig:{defaultMaskLevel:'conservative'}};
+        if($('#region').value==='EU')config.serverZone='EU';
+        await window.amplitude.add(window.sessionReplay.plugin(config)).promise;
+        log('ok','Session Replay plugin added',config);
+      }catch(error){log('warn','Session Replay unavailable',{message:error.message,hint:'Analytics still works without it.'})}
+    }
+    // Added after Session Replay so the log shows events as they actually leave,
+    // replay ID and session included, rather than what the app handed over.
+    async function addWireLog(){
+      await window.amplitude.add({
+        name:'workshop-wire-log',type:'enrichment',
+        setup:async()=>undefined,
+        execute:async event=>{
+          try{log('ok','Wire · '+event.event_type,{event_type:event.event_type,event_properties:event.event_properties,user_properties:event.user_properties,session_id:event.session_id,insert_id:event.insert_id})}catch(error){}
+          return event;
+        }
+      }).promise;
+    }
+    // Web Experiment is a script per deployment. It applies its variant to this page
+    // and reports exposure through the same SDK, which the wire log picks up.
+    async function addWebExperiment(){
+      const key=$('#deployment-key').value.trim();
+      if(!key)return;
+      keyStore.write('deployment_key',key);
+      try{
+        await loadScript('https://cdn.amplitude.com/script/'+encodeURIComponent(key)+'.experiment.js',null,'Web Experiment script was blocked, or the deployment key was rejected');
+        log('ok','Web Experiment loaded',{deployment:'…'+key.slice(-6),note:'Variants apply to this page. Watch the wire log for $exposure.'});
+      }catch(error){log('warn','Web Experiment unavailable',{message:error.message,hint:'A rejected key is usually a server key, or a deployment from another project.'})}
     }
     async function connect(){
       const apiKey=$('#api-key').value.trim();if(!apiKey){toast('Paste a project API key first');return}
-      keyStore.write(apiKey);syncUrl();$('#connect').disabled=true;$('#connect').textContent='Connecting…';
+      keyStore.write('api_key',apiKey);syncUrl();$('#connect').disabled=true;$('#connect').textContent='Connecting…';
       try{
         await loadSdk();const options={defaultTracking:false,logLevel:window.amplitude.Types.LogLevel.Warn};if($('#region').value==='EU')options.serverZone='EU';
-        amplitudeClient=window.createWorkshopAmplitudeAdapter(window.amplitude);const result=await amplitudeClient.init(apiKey,$('#user-id').value.trim(),options);connected=true;connectedKey=apiKey;setConnection(true);log('ok','Amplitude connected',{code:result&&result.code,region:$('#region').value,user_id:$('#user-id').value.trim(),defaultTracking:false});await identify();
+        await addSessionReplay();await addWireLog();
+        amplitudeClient=window.createWorkshopAmplitudeAdapter(window.amplitude);const result=await amplitudeClient.init(apiKey,$('#user-id').value.trim(),options);connected=true;connectedKey=apiKey;setConnection(true);log('ok','Amplitude connected',{code:result&&result.code,region:$('#region').value,user_id:$('#user-id').value.trim(),defaultTracking:false,session_replay:$('#session-replay').checked});await identify();await addWebExperiment();
         if(params.get('shared')==='1'&&params.get('opened')!=='1'){await emit('shared-list-opened');params.set('opened','1');syncUrl()}
       }catch(error){connected=false;setConnection(false);log('warn','Connection failed',{message:error.message});toast('Connection failed. Check Activity.')}
       finally{$('#connect').disabled=false;$('#connect').textContent='Connect Amplitude'}
@@ -255,9 +309,9 @@
     document.querySelectorAll('[data-filter]').forEach(button=>button.addEventListener('click',async()=>{filter=button.dataset.filter;renderTasks();await emit('filter-changed')}));
     // A share link carries the list and the plan, never the key or the sharer's profile.
     // Whoever opens it connects their own project, so their events land in it.
-    $('#share').addEventListener('click',async()=>{await emit('list-shared');const share=new URL(location.href);share.searchParams.set('tasks',encodeState(tasks));share.searchParams.set('shared','1');['opened','apiKey','userId','role','experience','table'].forEach(name=>share.searchParams.delete(name));try{await navigator.clipboard.writeText(share.href);toast('Share link copied')}catch{prompt('Copy this link',share.href)}});
+    $('#share').addEventListener('click',async()=>{await emit('list-shared');const share=new URL(location.href);share.searchParams.set('tasks',encodeState(tasks));share.searchParams.set('shared','1');['opened','apiKey','deploymentKey','userId','role','experience','table'].forEach(name=>share.searchParams.delete(name));try{await navigator.clipboard.writeText(share.href);toast('Share link copied')}catch{prompt('Copy this link',share.href)}});
     $('#connect').addEventListener('click',()=>{if(connected&&connectedKey!==$('#api-key').value.trim()){syncUrl();location.reload()}else connect()});
-    $('#disconnect').addEventListener('click',()=>{$('#api-key').value='';keyStore.write('');params.delete('apiKey');params.delete('opened');syncUrl();location.reload()});
+    $('#disconnect').addEventListener('click',()=>{$('#api-key').value='';keyStore.write('api_key','');keyStore.write('deployment_key','');params.delete('apiKey');params.delete('opened');syncUrl();location.reload()});
     $('#identify').addEventListener('click',identify);
     function sameSet(a,b){return a.length===b.length&&a.every(name=>b.includes(name))}
     function updateSelection(id,name,on){
@@ -295,10 +349,11 @@
     $('#reset-plan').addEventListener('click',()=>{WORKSHOP.actions.forEach(a=>['event_','off_','props_','types_'].forEach(prefix=>params.delete(prefix+a.id)));params.delete('uprops');renderPlan();syncUrl();toast('Plan restored to how it shipped')});
     $('#clear-log').addEventListener('click',()=>{logs=[];renderLog()});
     ['#region','#user-id','#role','#experience','#table'].forEach(selector=>$(selector).addEventListener('change',syncUrl));
-    $('#api-key').addEventListener('change',()=>{keyStore.write($('#api-key').value.trim());syncUrl()});
+    $('#api-key').addEventListener('change',()=>{keyStore.write('api_key',$('#api-key').value.trim());syncUrl()});
+    $('#deployment-key').addEventListener('change',()=>keyStore.write('deployment_key',$('#deployment-key').value.trim()));
 
-    const urlKey=(params.get('apiKey')||'').trim();if(urlKey)keyStore.write(urlKey);
-    $('#api-key').value=keyStore.read();$('#region').value=params.get('region')||'US';$('#user-id').value=params.get('userId')||uid();$('#role').value=params.get('role')||'digital analyst';$('#experience').value=params.get('experience')||'intermediate';$('#table').value=params.get('table')||'';
+    const urlKey=(params.get('apiKey')||'').trim();if(urlKey)keyStore.write('api_key',urlKey);
+    $('#api-key').value=keyStore.read('api_key');$('#deployment-key').value=keyStore.read('deployment_key');$('#region').value=params.get('region')||'US';$('#user-id').value=params.get('userId')||uid();$('#role').value=params.get('role')||'digital analyst';$('#experience').value=params.get('experience')||'intermediate';$('#table').value=params.get('table')||'';
     renderPlan();renderTasks();renderLog();
     if($('#api-key').value)connect();
   </script>

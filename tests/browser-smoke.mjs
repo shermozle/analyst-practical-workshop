@@ -215,6 +215,10 @@ const APP_SCRIPT = `(async () => {
   results.shareTaskTitles = decode(shareParams.get('tasks')).map(t => t.title);
   results.liveTaskTitles = [...document.querySelectorAll('#tasks .task-title')].map(el => el.textContent);
   results.correctedUrl = location.href;
+  results.maskedTitles = document.querySelectorAll('#tasks .task-title.amp-mask').length;
+  results.maskedInput = document.querySelector('#new-task').classList.contains('amp-mask');
+  results.replayDefaultOn = document.querySelector('#session-replay').checked;
+  results.hasDeploymentField = Boolean(document.querySelector('#deployment-key'));
   return results;
 })()`;
 
@@ -267,6 +271,50 @@ const DECK_SCRIPT = `(async () => {
     slide.dataset.size = size;
     return tall;
   }).map(slide => slide.dataset.id + ' ' + slide.dataset.size);
+  return results;
+})()`;
+
+// Connecting for real needs a live project, so stub the SDK and assert the wiring:
+// plugin order, masking config, and that the wire log reports what leaves.
+const CONNECT_SCRIPT = `(async () => {
+  const calls = [];
+  const plugins = [];
+  window.amplitude = {
+    Types: { LogLevel: { Warn: 2 } },
+    add(plugin) { plugins.push(plugin); calls.push({ method: 'add', name: plugin.name, type: plugin.type, config: plugin.__config }); return { promise: Promise.resolve() }; },
+    init(key, userId, options) { calls.push({ method: 'init', key, userId, options }); return { promise: Promise.resolve({ code: 200 }) }; },
+    setUserId(id) { calls.push({ method: 'setUserId', id }); },
+    Identify: class { constructor() { this.values = {}; } set(k, v) { this.values[k] = v; return this; } },
+    identify(event) { calls.push({ method: 'identify', properties: event.values }); return { promise: Promise.resolve({ code: 200 }) }; },
+    track(name, properties) { calls.push({ method: 'track', name, properties }); return { promise: Promise.resolve({ code: 200, event: { event_type: name, event_properties: properties } }) }; }
+  };
+  window.sessionReplay = { plugin: (config) => ({ name: 'session-replay', type: 'enrichment', __config: config }) };
+
+  document.querySelector('#api-key').value = 'stubkey1234567890';
+  document.querySelector('#connect').click();
+  await new Promise(r => setTimeout(r, 500));
+
+  const results = {
+    order: calls.map(c => c.method + (c.name ? ':' + c.name : '')),
+    replayConfig: calls.find(c => c.name === 'session-replay')?.config,
+    initOptions: calls.find(c => c.method === 'init')?.options,
+    status: document.querySelector('#connection-status').textContent,
+    titles: [...document.querySelectorAll('#activity .log .log-head b')].map(e => e.textContent)
+  };
+
+  // Run the wire log the way the SDK would, and check it reports the enriched event.
+  const wire = plugins.find(p => p.name === 'workshop-wire-log');
+  results.wireIsEnrichment = wire?.type === 'enrichment';
+  if (wire) {
+    const returned = await wire.execute({
+      event_type: 'Task Created', session_id: 17, insert_id: 'abc',
+      event_properties: { task_id: 't1', '[Amplitude] Session Replay ID': 'replay-9f' }
+    });
+    results.wireReturnsEvent = returned?.event_type === 'Task Created';
+    const entry = document.querySelector('#activity .log');
+    results.wireTitle = entry.querySelector('.log-head b').textContent;
+    results.wirePayload = JSON.parse(entry.querySelector('pre').textContent);
+  }
   return results;
 })()`;
 
@@ -360,6 +408,31 @@ try {
   expect(restored.workshopTableOn === true, "Reloading lost the ticked workshop_table user property.");
   expect(restored.lastFilterOn === false, "Reloading brought back the unticked last_filter user property.");
 
+  expect(app.maskedTitles >= 1, "Task titles aren't marked amp-mask, so Session Replay would record them.");
+  expect(app.maskedInput === true, "The new-task input isn't marked amp-mask.");
+  expect(app.replayDefaultOn === true, "Session Replay should be ticked by default.");
+  expect(app.hasDeploymentField === true, "The Web Experiment deployment key field is missing.");
+
+  const connect = await evaluate((await openPage("/app.html")).sessionId, CONNECT_SCRIPT);
+  expect(
+    JSON.stringify(connect.order) === JSON.stringify([
+      "add:session-replay", "add:workshop-wire-log", "init", "setUserId", "identify"
+    ]),
+    `Connect sequence was ${JSON.stringify(connect.order)}.`
+  );
+  expect(connect.replayConfig?.sampleRate === 1, `Session Replay sample rate is ${connect.replayConfig?.sampleRate}.`);
+  expect(connect.replayConfig?.privacyConfig?.defaultMaskLevel === "conservative",
+    `Session Replay mask level is "${connect.replayConfig?.privacyConfig?.defaultMaskLevel}".`);
+  expect(connect.initOptions?.defaultTracking === false, "Init stopped disabling default tracking.");
+  expect(/Connected/.test(connect.status || ""), `Status after connect reads "${connect.status}".`);
+  expect(connect.titles?.includes("Session Replay plugin added"), "The Activity panel didn't report Session Replay attaching.");
+  expect(connect.wireIsEnrichment === true, `The wire log plugin type is "${connect.wireIsEnrichment}".`);
+  expect(connect.wireReturnsEvent === true, "The wire log must return the event or the SDK would drop it.");
+  expect(connect.wireTitle === "Wire · Task Created", `The wire entry reads "${connect.wireTitle}".`);
+  expect(connect.wirePayload?.event_properties?.["[Amplitude] Session Replay ID"] === "replay-9f",
+    "The wire log doesn't surface the replay ID that Session Replay stamps on the event.");
+  expect(connect.wirePayload?.session_id === 17, "The wire log doesn't surface the session ID.");
+
   const deckPage = await openPage("/slides.html");
   const deck = await evaluate(deckPage.sessionId, DECK_SCRIPT);
 
@@ -390,4 +463,4 @@ if (failures.length) {
   failures.forEach((failure) => console.error(`- ${failure}`));
   process.exit(1);
 }
-console.log("Browser smoke passed: shipped plan arrives with its planted flaws, every correction changes the payload, corrections survive a reload, plus key handling, share round-trip, identity panel, and slide fit.");
+console.log("Browser smoke passed: planted flaws arrive intact, every correction changes the payload and survives a reload, Session Replay and the wire log attach in order before init, plus key handling, share round-trip, identity panel, and slide fit.");

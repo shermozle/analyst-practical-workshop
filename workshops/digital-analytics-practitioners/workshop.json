@@ -8,7 +8,7 @@
   "hub_url": "https://shermozle.github.io/analyst-practical-workshop/",
   "outcomes": [
     "Move from a funnel drop-off to evidence about what users did next",
-    "Design event names, event properties, and user properties for a small product",
+    "Audit an inherited tracking plan and repair its names, properties, and types",
     "Connect a browser app to a new Amplitude project and inspect live events"
   ],
   "materials": [
@@ -111,20 +111,20 @@
     },
     {
       "id": "station-1",
-      "title": "Station 1: Choose events",
+      "title": "Station 1: Audit the event names",
       "start": 67,
       "minutes": 12,
       "mode": "hands-on",
-      "done_when": "Every chosen action has one event name and one question it will answer.",
+      "done_when": "The app's event names match a plan you would defend, and anything you chose not to track is unticked.",
       "station": 1
     },
     {
       "id": "station-2",
-      "title": "Station 2: Add properties",
+      "title": "Station 2: Fix the properties",
       "start": 79,
       "minutes": 12,
       "mode": "hands-on",
-      "done_when": "Each event carries the context its question needs, and the user properties describe the person rather than the latest action.",
+      "done_when": "Each event carries the context its question needs and nothing it can't justify, and person context sits on the user rather than on every event.",
       "station": 2
     },
     {
@@ -189,7 +189,39 @@
           "type": "string",
           "example": "keyboard"
         }
-      ]
+      ],
+      "shipped": {
+        "event_name": "clicked_add_button",
+        "properties": [
+          {
+            "name": "task_id",
+            "type": "string"
+          },
+          {
+            "name": "task_length",
+            "type": "number"
+          },
+          {
+            "name": "list_size",
+            "type": "string"
+          },
+          {
+            "name": "role",
+            "type": "string"
+          },
+          {
+            "name": "analytics_experience",
+            "type": "string"
+          }
+        ],
+        "flaws": [
+          "Named after the button that was clicked, not the action the person completed.",
+          "snake_case here, Title Case elsewhere, camelCase on delete. Pick one.",
+          "list_size is sent as a string, so it can't be averaged or bucketed.",
+          "role and analytics_experience describe the person, not this occurrence. They belong on the user.",
+          "entry_method is missing, so the second half of the question has no answer."
+        ]
+      }
     },
     {
       "id": "task-completed",
@@ -217,7 +249,28 @@
           "type": "number",
           "example": 4
         }
-      ]
+      ],
+      "shipped": {
+        "event_name": "Task Toggled",
+        "properties": [
+          {
+            "name": "task_id",
+            "type": "string"
+          },
+          {
+            "name": "task_position",
+            "type": "number"
+          },
+          {
+            "name": "list_size",
+            "type": "number"
+          }
+        ],
+        "flaws": [
+          "Shares one name with reopening, so nothing distinguishes finishing work from undoing it.",
+          "age_seconds is missing, so 'how long does completion take' has no answer."
+        ]
+      }
     },
     {
       "id": "task-reopened",
@@ -240,7 +293,24 @@
           "type": "number",
           "example": 4
         }
-      ]
+      ],
+      "shipped": {
+        "event_name": "Task Toggled",
+        "properties": [
+          {
+            "name": "task_id",
+            "type": "string"
+          },
+          {
+            "name": "list_size",
+            "type": "number"
+          }
+        ],
+        "flaws": [
+          "Collapsed into the same event as completion.",
+          "age_seconds is missing."
+        ]
+      }
     },
     {
       "id": "task-edited",
@@ -268,7 +338,29 @@
           "type": "number",
           "example": 45
         }
-      ]
+      ],
+      "shipped": {
+        "event_name": "Task Edited",
+        "properties": [
+          {
+            "name": "task_id",
+            "type": "string"
+          },
+          {
+            "name": "length_before",
+            "type": "number"
+          },
+          {
+            "name": "length_after",
+            "type": "number"
+          },
+          {
+            "name": "age_seconds",
+            "type": "number"
+          }
+        ],
+        "flaws": []
+      }
     },
     {
       "id": "task-deleted",
@@ -296,7 +388,37 @@
           "type": "number",
           "example": 3
         }
-      ]
+      ],
+      "shipped": {
+        "event_name": "taskDeleted",
+        "properties": [
+          {
+            "name": "task_id",
+            "type": "string"
+          },
+          {
+            "name": "was_completed",
+            "type": "string"
+          },
+          {
+            "name": "age_seconds",
+            "type": "number"
+          },
+          {
+            "name": "list_size",
+            "type": "number"
+          },
+          {
+            "name": "client_timestamp",
+            "type": "string"
+          }
+        ],
+        "flaws": [
+          "camelCase, unlike every other event here.",
+          "was_completed arrives as the string 'yes' or 'no', so it can't be filtered as a boolean.",
+          "client_timestamp duplicates the event time Amplitude already records."
+        ]
+      }
     },
     {
       "id": "filter-changed",
@@ -314,7 +436,20 @@
           "type": "number",
           "example": 2
         }
-      ]
+      ],
+      "shipped": {
+        "event_name": "Filter Changed - {filter}",
+        "properties": [
+          {
+            "name": "visible_task_count",
+            "type": "number"
+          }
+        ],
+        "flaws": [
+          "The filter value is baked into the event name, so the taxonomy grows one event per filter.",
+          "filter isn't a property, so you can't group one event by the view somebody chose."
+        ]
+      }
     },
     {
       "id": "list-shared",
@@ -337,7 +472,25 @@
           "type": "string",
           "example": "copy_link"
         }
-      ]
+      ],
+      "shipped": {
+        "event_name": "List Shared",
+        "properties": [
+          {
+            "name": "task_count",
+            "type": "number"
+          },
+          {
+            "name": "completed_task_count",
+            "type": "number"
+          },
+          {
+            "name": "share_method",
+            "type": "string"
+          }
+        ],
+        "flaws": []
+      }
     },
     {
       "id": "shared-list-opened",
@@ -360,7 +513,27 @@
           "type": "string",
           "example": "share_link"
         }
-      ]
+      ],
+      "shipped": {
+        "event_name": "Open Shared List",
+        "properties": [
+          {
+            "name": "task_count",
+            "type": "number"
+          },
+          {
+            "name": "completed_task_count",
+            "type": "number"
+          },
+          {
+            "name": "source",
+            "type": "string"
+          }
+        ],
+        "flaws": [
+          "Action then object, while every other event here is object then action."
+        ]
+      }
     }
   ],
   "user_properties": [
@@ -555,13 +728,13 @@
       "act": "Hands-on",
       "block_id": "app-walkthrough",
       "kind": "points",
-      "title": "The app already works",
+      "title": "The app is already instrumented",
       "points": [
         "Add, edit, complete, filter, delete, and share tasks",
-        "Edit event names in the Instrumentation panel",
+        "Somebody already wrote a tracking plan for it",
         "Watch every attempted event in the Activity panel"
       ],
-      "notes": "DEMO THE APP. Add a task, complete it, and open the Instrumentation panel. Show that task text appears in the interface but isn't sent as an event property. Change one event name and untick one event, and point out that both land in the URL. Don't connect an API key yet."
+      "notes": "DEMO THE APP. Add a task, complete it, then open the Instrumentation panel and say plainly that this plan came with the app and has problems in it. Don't say which. Show that task text appears in the interface but is never sent as a property. Change one event name and untick one action so the room sees both land in the URL. Don't connect an API key yet."
     },
     {
       "id": "station-1",
@@ -569,13 +742,13 @@
       "block_id": "station-1",
       "kind": "station",
       "station": 1,
-      "title": "Choose events",
+      "title": "Audit the event names",
       "points": [
-        "Read the eight user actions in the guide",
-        "Choose the actions worth tracking and name each event",
-        "Write one question each chosen event should answer"
+        "Name each action yourself before you open the app",
+        "Compare your names with the plan that shipped",
+        "Fix the names, and untick what isn't worth tracking"
       ],
-      "notes": "Give pairs 12 minutes. Ask them to name completed actions, not interface controls. Untick anything they decide not to track; that choice changes what the app sends. When checking progress, ask what decision each event supports. At minute 75, tell the room they have four minutes left."
+      "notes": "Give pairs 12 minutes. Ask them to write their own names first: once they've read the shipped plan they'll anchor to it. Two of the eight are already correct, so listen for tables that are 'fixing' everything. Ask what decision each event supports and what the name would look like in a chart. At minute 75, tell the room they have four minutes left."
     },
     {
       "id": "action-inventory",
@@ -596,13 +769,13 @@
       "block_id": "station-2",
       "kind": "station",
       "station": 2,
-      "title": "Add properties",
+      "title": "Fix the properties",
       "points": [
-        "Add context needed to answer each event question",
-        "Define role, analytics experience, and workshop table as user properties",
-        "Give every property a type and example value"
+        "Tick the context each event's question needs",
+        "Drop what you can't justify and fix the wrong types",
+        "Move person context off the events and onto the user"
       ],
-      "notes": "Give pairs 12 minutes. Push for types and example values. Ask whether a proposed user property describes the person or only the latest action. Remind them that free-text task content can contain private data and isn't needed for the planned questions."
+      "notes": "Give pairs 12 minutes. Every property chip can be ticked, unticked, and in two places retyped, so this is a real repair rather than a paper one. Push on the two questions that matter: does a chart need this, and does it describe the person or this one occurrence? A string that holds a number is the type mistake most people walk past."
     },
     {
       "id": "property-check",
@@ -708,5 +881,27 @@
       "subtitle": "The app, guide, and reference plan stay available from the workshop hub.",
       "notes": "Close on the working habit: record the question beside the event and property definitions. Thank the room and leave the hub URL visible."
     }
+  ],
+  "shipped_user_properties": [
+    {
+      "name": "role",
+      "type": "string"
+    },
+    {
+      "name": "analytics_experience",
+      "type": "string"
+    },
+    {
+      "name": "last_task_id",
+      "type": "string"
+    },
+    {
+      "name": "last_filter",
+      "type": "string"
+    }
+  ],
+  "shipped_user_property_flaws": [
+    "last_task_id and last_filter describe the latest action, not the person. They overwrite on every identify.",
+    "workshop_table is missing, so you can't group the room by table."
   ]
 }

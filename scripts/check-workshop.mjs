@@ -47,6 +47,23 @@ for (const slide of workshop.slides) {
 }
 function blockFor(slide) { return workshop.run_of_show.find((block) => block.id === slide.block_id); }
 
+// The audit only works if the shipped plan is genuinely wrong, and it only teaches
+// judgement if some of it is genuinely right.
+const signature = (properties) => JSON.stringify(properties.map((property) => [property.name, property.type]));
+for (const action of workshop.actions) {
+  const shipped = action.shipped;
+  pass(Boolean(shipped?.event_name) && Array.isArray(shipped?.properties), `${action.id} has no shipped plan for attendees to correct.`);
+  if (!shipped?.properties) continue;
+  const differs = shipped.event_name !== action.event_name || signature(shipped.properties) !== signature(action.properties);
+  pass(differs === Boolean(shipped.flaws?.length),
+    `${action.id} ${differs ? "differs from the reference plan but lists no flaws" : "lists flaws but matches the reference plan"}.`);
+}
+const flawedActions = workshop.actions.filter((action) => action.shipped?.flaws?.length);
+const cleanActions = workshop.actions.filter((action) => !action.shipped?.flaws?.length);
+pass(flawedActions.length >= 4, `Only ${flawedActions.length} actions are flawed; the audit needs more to find.`);
+pass(cleanActions.length >= 2, `Only ${cleanActions.length} actions are already correct; attendees need something to leave alone.`);
+pass(workshop.shipped_user_properties?.length > 0, "No shipped user properties for attendees to correct.");
+
 const expectedFiles = ["index.html", "slides.html", "app.html", "talk-track.html", "guide.html"];
 const files = {};
 for (const name of expectedFiles) {
@@ -82,6 +99,15 @@ if (files["slides.html"]) {
 
 if (files["talk-track.html"]) {
   for (const slide of workshop.slides) pass(files["talk-track.html"].includes(`slides.html#${slide.id}`), `Talk track doesn't link to slide ${slide.id}.`);
+  // The answer key belongs to the presenter. It must be in the talk track and
+  // nowhere the attendees are reading.
+  for (const action of flawedActions) {
+    for (const flaw of action.shipped.flaws) {
+      pass(files["talk-track.html"].includes(flaw), `Talk track is missing the flaw note for ${action.id}: "${flaw}"`);
+      if (files["guide.html"]) pass(!files["guide.html"].includes(flaw), `Guide gives away the answer for ${action.id}.`);
+      if (files["app.html"]) pass(!files["app.html"].includes(flaw), `App gives away the answer for ${action.id}.`);
+    }
+  }
 }
 
 if (files["guide.html"]) {
@@ -100,7 +126,26 @@ if (files["app.html"]) {
   pass(files["app.html"].includes("sdk.init(apiKey,userId||undefined,options).promise"), "App initialization order changed.");
   pass(files["app.html"].includes("sdk.identify(identifyEvent).promise"), "App Identify call is missing.");
   pass(files["app.html"].includes("sdk.track(eventName,properties).promise"), "App track call is missing.");
-  for (const action of workshop.actions) pass(files["app.html"].includes(action.event_name), `App is missing ${action.event_name}.`);
+  // The app ships the flawed plan and must not carry the reference names: those are
+  // the answer to the exercise the attendee has open in the next tab.
+  for (const action of workshop.actions) {
+    pass(files["app.html"].includes(action.shipped.event_name), `App is missing the shipped event name ${action.shipped.event_name}.`);
+    if (action.shipped.event_name !== action.event_name) {
+      pass(!files["app.html"].includes(action.event_name), `App leaks the reference event name ${action.event_name}.`);
+    }
+  }
+  // Every property either side of the audit needs a value, or the app silently sends
+  // nothing when an attendee ticks it.
+  const payloadSource = files["app.html"].match(/function actionPayload\(id,context\)\{([\s\S]*?)\n    \}/);
+  pass(Boolean(payloadSource), "App has no actionPayload function to check property values against.");
+  if (payloadSource) {
+    for (const action of workshop.actions) {
+      const names = new Set([...action.properties, ...action.shipped.properties].map((property) => property.name));
+      for (const name of names) {
+        pass(payloadSource[1].includes(`${name}:`), `App can't produce a value for ${action.id}.${name}.`);
+      }
+    }
+  }
   // The key is a public client-side identifier, but it must not ride along in the
   // URL: share links would carry it and the recipient would connect to the wrong project.
   pass(!files["app.html"].includes("setParam('apiKey'"), "App writes the API key into the URL.");
@@ -114,7 +159,8 @@ if (files["app.html"]) {
   pass(!files["app.html"].includes("event.submitter?'button'"), "App still infers entry_method from event.submitter.");
   const forbiddenProperties = ["task_title", "task_text", "task_content", "email"];
   for (const property of forbiddenProperties) {
-    const declared = workshop.actions.some((action) => action.properties.some((item) => item.name === property));
+    const declared = workshop.actions.some((action) =>
+      [...action.properties, ...action.shipped.properties].some((item) => item.name === property));
     pass(!declared, `Tracking plan includes forbidden property ${property}.`);
   }
 }

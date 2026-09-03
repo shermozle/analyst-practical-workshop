@@ -97,55 +97,98 @@ const APP_SCRIPT = `(async () => {
   const lastPayload = () => JSON.parse(document.querySelector('#activity .log pre').textContent);
   const lastTitle = () => document.querySelector('#activity .log .log-head b').textContent;
   const submit = () => form.dispatchEvent(new SubmitEvent('submit', { bubbles: true, cancelable: true, submitter: addButton }));
+  const change = (el, value) => { if (value !== undefined) el.value = value; el.dispatchEvent(new Event('change', { bubbles: true })); };
+  const check = (el, on) => { el.checked = on; el.dispatchEvent(new Event('change', { bubbles: true })); };
+  const tick = (action, name, on) => check(document.querySelector('[data-prop-action="' + action + '"][data-prop-name="' + name + '"]'), on);
+  const uprop = (name, on) => check(document.querySelector('[data-uprop="' + name + '"]'), on);
+  const addTask = (title, viaButton) => {
+    input.value = title;
+    if (viaButton) addButton.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    else input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    submit();
+  };
 
   results.planRows = document.querySelectorAll('#plan .plan-row').length;
   results.toggles = document.querySelectorAll('#plan [data-toggle-id]').length;
+  results.userPropRows = document.querySelectorAll('#user-plan [data-uprop]').length;
 
-  // Enter in the field must report keyboard, even though implicit submission
-  // sets event.submitter to the default button.
-  input.value = 'Keyboard task';
-  input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
-  submit();
+  // ---- as shipped: the plan is wrong in the ways the answer key says it is ----
+  addTask('Shipped task');
   await wait();
-  results.keyboardEntry = lastPayload().event_properties.entry_method;
+  results.shippedCreate = lastPayload();
 
-  // Clicking Add task must report button.
-  input.value = 'Button task';
-  addButton.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
-  submit();
+  document.querySelector('[data-filter="active"]').click();
   await wait();
-  results.buttonEntry = lastPayload().event_properties.entry_method;
+  results.shippedFilter = lastPayload();
+
+  const visible = [...document.querySelectorAll('#tasks .task')];
+  results.expectedPosition = 3;
+  check(visible[2].querySelector('input[type=checkbox]'), true);
+  await wait();
+  results.shippedComplete = lastPayload();
+
+  document.querySelector('[data-filter="all"]').click();
+  await wait();
+  document.querySelector('#tasks .task .delete').click();
+  await wait();
+  results.shippedDelete = lastPayload();
+
+  document.querySelector('#identify').click();
+  await wait();
+  results.shippedUserProperties = lastPayload().user_properties;
 
   // An untracked action must send nothing and say so.
   const toggle = document.querySelector('[data-toggle-id="task-created"]');
-  toggle.checked = false;
-  toggle.dispatchEvent(new Event('change', { bubbles: true }));
-  input.value = 'Untracked task';
-  submit();
+  check(toggle, false);
+  addTask('Untracked task');
   await wait();
   results.untrackedTitle = lastTitle();
   results.untrackedPayload = lastPayload();
   results.offParam = new URLSearchParams(location.search).get('off_task-created');
   results.rowDimmed = document.querySelector('[data-row-id="task-created"]').classList.contains('off');
-  toggle.checked = true;
-  toggle.dispatchEvent(new Event('change', { bubbles: true }));
+  check(toggle, true);
   await wait();
 
-  // task_position must be the position the person saw, not the index in the full list.
-  document.querySelector('[data-filter="active"]').click();
+  // ---- now correct it, the way an attendee would ----
+  change(document.querySelector('#event-task-created'), 'Task Created');
+  tick('task-created', 'entry_method', true);
+  tick('task-created', 'role', false);
+  tick('task-created', 'analytics_experience', false);
+  change(document.querySelector('[data-type-action="task-created"][data-type-name="list_size"]'), 'number');
   await wait();
-  const visible = [...document.querySelectorAll('#tasks .task')];
-  const target = visible[2];
-  results.visibleCount = visible.length;
-  results.expectedPosition = 3;
-  const box = target.querySelector('input[type=checkbox]');
-  box.checked = true;
-  box.dispatchEvent(new Event('change', { bubbles: true }));
+
+  addTask('Corrected task');
   await wait();
-  results.reportedPosition = lastPayload().event_properties.task_position;
-  results.reportedEventName = lastPayload().event_type;
+  results.correctedCreateKeyboard = lastPayload();
+  addTask('Clicked task', true);
+  await wait();
+  results.correctedCreateButton = lastPayload();
+
+  change(document.querySelector('#event-filter-changed'), 'List Filter Changed');
+  tick('filter-changed', 'filter', true);
+  await wait();
+  document.querySelector('[data-filter="completed"]').click();
+  await wait();
+  results.correctedFilter = lastPayload();
   document.querySelector('[data-filter="all"]').click();
   await wait();
+
+  change(document.querySelector('#event-task-completed'), 'Task Completed');
+  tick('task-completed', 'age_seconds', true);
+  await wait();
+  const stillActive = [...document.querySelectorAll('#tasks .task')].find(row => !row.classList.contains('done'));
+  check(stillActive.querySelector('input[type=checkbox]'), true);
+  await wait();
+  results.correctedComplete = lastPayload();
+
+  uprop('last_task_id', false);
+  uprop('last_filter', false);
+  uprop('workshop_table', true);
+  document.querySelector('#table').value = 'table-4';
+  await wait();
+  document.querySelector('#identify').click();
+  await wait();
+  results.correctedUserProperties = lastPayload().user_properties;
 
   // The key lives in tab storage, never the URL.
   const key = document.querySelector('#api-key');
@@ -171,7 +214,7 @@ const APP_SCRIPT = `(async () => {
   const decode = (value) => JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(value.replaceAll('-', '+').replaceAll('_', '/')), c => c.charCodeAt(0))));
   results.shareTaskTitles = decode(shareParams.get('tasks')).map(t => t.title);
   results.liveTaskTitles = [...document.querySelectorAll('#tasks .task-title')].map(el => el.textContent);
-  results.pageText = document.body.innerText.length;
+  results.correctedUrl = location.href;
   return results;
 })()`;
 
@@ -237,14 +280,56 @@ try {
 
   expect(app.planRows === 8, `Instrumentation panel shows ${app.planRows} rows, expected 8.`);
   expect(app.toggles === 8, `Instrumentation panel shows ${app.toggles} toggles, expected 8.`);
-  expect(app.keyboardEntry === "keyboard", `Enter in the field reported entry_method "${app.keyboardEntry}".`);
-  expect(app.buttonEntry === "button", `Clicking Add task reported entry_method "${app.buttonEntry}".`);
+  expect(app.userPropRows === 5, `User property panel shows ${app.userPropRows} chips, expected 5.`);
+
+  // The app must arrive wrong in exactly the ways the answer key claims.
+  const shippedCreate = app.shippedCreate?.event_properties || {};
+  expect(app.shippedCreate?.event_type === "clicked_add_button", `Shipped create event is "${app.shippedCreate?.event_type}".`);
+  expect(typeof shippedCreate.list_size === "string", `Shipped list_size is ${typeof shippedCreate.list_size}, expected the planted string.`);
+  expect("role" in shippedCreate, "Shipped create event should carry role as an event property for attendees to move.");
+  expect(!("entry_method" in shippedCreate), "Shipped create event shouldn't carry entry_method; that's the planted omission.");
+
+  const shippedFilter = app.shippedFilter?.event_properties || {};
+  expect(app.shippedFilter?.event_type === "Filter Changed - active", `Shipped filter event is "${app.shippedFilter?.event_type}"; the value should be baked into the name.`);
+  expect(!("filter" in shippedFilter), "Shipped filter event shouldn't carry a filter property; that's the planted omission.");
+
+  const shippedComplete = app.shippedComplete?.event_properties || {};
+  expect(app.shippedComplete?.event_type === "Task Toggled", `Shipped complete event is "${app.shippedComplete?.event_type}".`);
+  expect(!("age_seconds" in shippedComplete), "Shipped complete event shouldn't carry age_seconds; that's the planted omission.");
+  expect(shippedComplete.task_position === app.expectedPosition, `task_position reported ${shippedComplete.task_position}; the person clicked the item at visible position ${app.expectedPosition}.`);
+
+  const shippedDelete = app.shippedDelete?.event_properties || {};
+  expect(app.shippedDelete?.event_type === "taskDeleted", `Shipped delete event is "${app.shippedDelete?.event_type}".`);
+  expect(typeof shippedDelete.was_completed === "string", `Shipped was_completed is ${typeof shippedDelete.was_completed}, expected the planted string.`);
+  expect("client_timestamp" in shippedDelete, "Shipped delete event should carry the redundant client_timestamp.");
+
+  expect("last_filter" in (app.shippedUserProperties || {}), "Shipped user properties should include last_filter for attendees to move.");
+  expect(!("workshop_table" in (app.shippedUserProperties || {})), "Shipped user properties shouldn't include workshop_table; that's the planted omission.");
+
   expect(/^Not tracked/.test(app.untrackedTitle || ""), `Untracked action logged "${app.untrackedTitle}".`);
   expect(app.untrackedPayload?.event_properties === undefined, "Untracked action still logged an event payload.");
   expect(app.offParam === "1", "Unticking an action didn't record off_task-created in the URL.");
   expect(app.rowDimmed === true, "Unticked row isn't visibly marked as untracked.");
-  expect(app.reportedEventName === "Task Completed", `Completing a task sent "${app.reportedEventName}".`);
-  expect(app.reportedPosition === app.expectedPosition, `task_position reported ${app.reportedPosition}; the person clicked the item at visible position ${app.expectedPosition}.`);
+
+  // And every correction must actually change what goes out.
+  const fixedKeyboard = app.correctedCreateKeyboard?.event_properties || {};
+  expect(app.correctedCreateKeyboard?.event_type === "Task Created", `Renaming the event sent "${app.correctedCreateKeyboard?.event_type}".`);
+  expect(fixedKeyboard.entry_method === "keyboard", `Enter in the field reported entry_method "${fixedKeyboard.entry_method}".`);
+  expect(app.correctedCreateButton?.event_properties?.entry_method === "button", `Clicking Add task reported entry_method "${app.correctedCreateButton?.event_properties?.entry_method}".`);
+  expect(typeof fixedKeyboard.list_size === "number", `Correcting the type left list_size as ${typeof fixedKeyboard.list_size}.`);
+  expect(!("role" in fixedKeyboard) && !("analytics_experience" in fixedKeyboard), "Unticking person context left it on the event.");
+
+  expect(app.correctedFilter?.event_type === "List Filter Changed", `Corrected filter event is "${app.correctedFilter?.event_type}".`);
+  expect(app.correctedFilter?.event_properties?.filter === "completed", `Corrected filter property is "${app.correctedFilter?.event_properties?.filter}".`);
+
+  expect(app.correctedComplete?.event_type === "Task Completed", `Corrected complete event is "${app.correctedComplete?.event_type}".`);
+  expect(typeof app.correctedComplete?.event_properties?.age_seconds === "number", "Ticking age_seconds didn't add it to the payload.");
+
+  const fixedUser = app.correctedUserProperties || {};
+  expect(fixedUser.workshop_table === "table-4", `Corrected user properties give workshop_table as "${fixedUser.workshop_table}".`);
+  expect(!("last_filter" in fixedUser) && !("last_task_id" in fixedUser), "Unticking occurrence context left it on the user.");
+  expect("role" in fixedUser, "Corrected user properties dropped role, which does belong on the person.");
+
   expect(app.urlHasApiKey === false, "The API key reached the URL.");
   expect(app.sessionKey === "testkey1234567890", `The API key wasn't stored in the tab (got ${app.sessionKey}).`);
   expect(app.shareHasApiKey === false, "The share link carries the API key.");
@@ -254,6 +339,26 @@ try {
   expect(app.shareHasSharedFlag === true, "The share link doesn't set shared=1.");
   expect(JSON.stringify(app.shareTaskTitles) === JSON.stringify(app.liveTaskTitles),
     `Share link doesn't round-trip the list: ${JSON.stringify(app.shareTaskTitles)} vs ${JSON.stringify(app.liveTaskTitles)}.`);
+
+  // A copied link has to restore the corrected plan, not the shipped one.
+  const restored = await evaluate((await openPage(app.correctedUrl.replace(origin, ""))).sessionId, `({
+    eventName: document.querySelector('#event-task-created').value,
+    entryMethodOn: document.querySelector('[data-prop-action="task-created"][data-prop-name="entry_method"]').checked,
+    roleOn: document.querySelector('[data-prop-action="task-created"][data-prop-name="role"]').checked,
+    listSizeType: document.querySelector('[data-type-action="task-created"][data-type-name="list_size"]').value,
+    filterEventName: document.querySelector('#event-filter-changed').value,
+    filterPropOn: document.querySelector('[data-prop-action="filter-changed"][data-prop-name="filter"]').checked,
+    workshopTableOn: document.querySelector('[data-uprop="workshop_table"]').checked,
+    lastFilterOn: document.querySelector('[data-uprop="last_filter"]').checked
+  })`);
+  expect(restored.eventName === "Task Created", `Reloading restored the event name as "${restored.eventName}".`);
+  expect(restored.entryMethodOn === true, "Reloading lost the ticked entry_method property.");
+  expect(restored.roleOn === false, "Reloading brought back the unticked role property.");
+  expect(restored.listSizeType === "number", `Reloading restored the list_size type as "${restored.listSizeType}".`);
+  expect(restored.filterEventName === "List Filter Changed", `Reloading restored the filter event name as "${restored.filterEventName}".`);
+  expect(restored.filterPropOn === true, "Reloading lost the ticked filter property.");
+  expect(restored.workshopTableOn === true, "Reloading lost the ticked workshop_table user property.");
+  expect(restored.lastFilterOn === false, "Reloading brought back the unticked last_filter user property.");
 
   const deckPage = await openPage("/slides.html");
   const deck = await evaluate(deckPage.sessionId, DECK_SCRIPT);
@@ -285,4 +390,4 @@ if (failures.length) {
   failures.forEach((failure) => console.error(`- ${failure}`));
   process.exit(1);
 }
-console.log("Browser smoke passed: entry_method, tracking toggles, task_position, key handling, share round-trip, identity panel, and slide fit.");
+console.log("Browser smoke passed: shipped plan arrives with its planted flaws, every correction changes the payload, corrections survive a reload, plus key handling, share round-trip, identity panel, and slide fit.");

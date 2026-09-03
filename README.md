@@ -32,11 +32,13 @@ carries fields the renderer ignores. It then runs two test passes:
   order `init → setUserId → identify → track` plus every event payload against the
   manifest, so a schema change can't drift from the tracking plan the room is handed.
 - **Browser** (`tests/browser-smoke.mjs`) drives the real pages in headless Chrome
-  over CDP: that `entry_method` reports `keyboard` for Enter and `button` for a click,
-  that an untracked action sends nothing, that `task_position` is the position the
-  person saw, that the API key never reaches the URL, that a share link carries the
-  list but not the key or the sharer's profile and round-trips it, that the identity
-  panel works without advancing the deck, and that no slide overflows the 16:9 stage.
+  over CDP: that the shipped plan arrives with every planted flaw intact, that each
+  correction changes the next payload, that the corrections survive a reload, that
+  `entry_method` reports `keyboard` for Enter and `button` for a click, that an
+  untracked action sends nothing, that `task_position` is the position the person saw,
+  that the API key never reaches the URL, that a share link carries the list but not
+  the key or the sharer's profile and round-trips it, that the identity panel works
+  without advancing the deck, and that no slide overflows the 16:9 stage.
 
 CI has no Chrome, so the browser pass is skipped there (`SKIP_BROWSER_CHECK=1`) and
 run locally before delivery.
@@ -56,8 +58,26 @@ dist/<id>/             the built pack, committed as the offline copy
 
 Facts live once, in `workshop.json`, and the build derives the rest. Station numbers,
 durations, and "done when" lines come off the run-of-show block, so the deck and the
-guide can't disagree about them. Slide order drives the talk track. The app receives
-only the tracking plan — never the slides or presenter notes.
+guide can't disagree about them. Slide order drives the talk track.
+
+### The exercise is an audit, not a blank page
+
+Each action in the manifest carries two plans: the reference one, and a `shipped` one
+with flaws planted in it. The app arrives instrumented with the flawed plan — wrong
+names, inconsistent casing, a filter value baked into the event name, a number sent as
+a string, a boolean sent as `"yes"`, person context on events and occurrence context on
+the user, and question-critical properties simply missing. Two of the eight actions are
+already correct, so leaving things alone is part of the exercise.
+
+Attendees repair it in the app, for real: rename events, tick and untick property chips,
+fix the two wrong types, and sort the user properties out. Every correction changes the
+next payload and lands in the URL, so a copied link restores a corrected plan.
+
+The build keeps the halves apart. The app gets the flawed plan and the property pool but
+never the reference event names. The flaw descriptions become a presenter answer key in
+the talk track, and the gate fails if they leak into the guide or the app. Adding a flaw
+means adding it to `shipped.flaws`; the gate fails if a shipped plan differs from the
+reference without saying why, or matches it while claiming a flaw.
 
 ## Running the session
 

@@ -65,6 +65,9 @@ assert.equal(result.code, 200);
 
 const payloadMatch = template.match(/function actionPayload\(id,context\)\{([\s\S]*?)\n    \}\n    async function emit/);
 assert(payloadMatch, "The app's actionPayload function is missing.");
+const castMatch = template.match(/function cast\(value,type\)\{([\s\S]*?)\n    \}/);
+assert(castMatch, "The app's cast function is missing.");
+
 const payloadContext = { window: {} };
 vm.runInNewContext(`
   let tasks = [
@@ -73,11 +76,26 @@ vm.runInNewContext(`
   ];
   let filter = 'active';
   function age(){ return 42; }
+  function profile(){ return { role:'digital analyst', analytics_experience:'intermediate', workshop_table:'table-4' }; }
   function visibleTasks(){ return tasks.filter(task => filter === 'all' || (filter === 'active' && !task.done) || (filter === 'completed' && task.done)); }
   function actionPayload(id,context){${payloadMatch[1]}
   }
+  function cast(value,type){${castMatch[1]}
+  }
   window.actionPayload = actionPayload;
+  window.cast = cast;
 `, payloadContext);
+
+// Values leave actionPayload in their honest type. The shipped plan's wrong types
+// are produced by casting at send time, which is what the attendee corrects.
+const { cast } = payloadContext.window;
+assert.equal(cast(4, "string"), "4", "a number cast to string should keep its digits");
+assert.equal(cast("4", "number"), 4, "a string holding a number should cast back to a number");
+assert.equal(cast(true, "string"), "yes", "a boolean cast to string should read yes");
+assert.equal(cast(false, "string"), "no", "a boolean cast to string should read no");
+assert.equal(cast("no", "boolean"), false, "the string no should cast back to false");
+assert.equal(cast("yes", "boolean"), true, "the string yes should cast back to true");
+assert.equal(cast(0, "number"), 0, "zero should survive a number cast");
 
 const task = { id: "task-a13f", title: "Write tracking plan", done: false, createdAt: 1 };
 const contexts = {
@@ -91,11 +109,22 @@ const contexts = {
   "shared-list-opened": {}
 };
 for (const action of workshop.actions) {
-  const payload = payloadContext.window.actionPayload(action.id, contexts[action.id]);
-  assert.deepEqual(Object.keys(payload).sort(), action.properties.map((property) => property.name).sort(), `${action.id} property names differ from the plan.`);
-  for (const property of action.properties) {
-    assert.equal(typeof payload[property.name], property.type, `${action.id}.${property.name} should be ${property.type}.`);
+  const values = payloadContext.window.actionPayload(action.id, contexts[action.id]);
+  // The app must be able to produce every value either side of the audit: the ones
+  // the shipped plan sends, and the ones an attendee can tick to repair it.
+  const pool = [...action.shipped.properties, ...action.properties];
+  for (const property of pool) {
+    assert(property.name in values, `${action.id}.${property.name} has no value in the app, so ticking it would send nothing.`);
   }
+  for (const property of action.properties) {
+    assert.equal(typeof values[property.name], property.type, `${action.id}.${property.name} should be ${property.type} before casting.`);
+  }
+  assert.deepEqual(
+    Object.keys(values).sort(),
+    [...new Set(pool.map((property) => property.name))].sort(),
+    `${action.id} produces values the plan never asks for.`
+  );
 }
 
-console.log("Amplitude contract passed: init → setUserId → identify → track; all event payloads match the plan.");
+const flawCount = workshop.actions.reduce((sum, action) => sum + action.shipped.flaws.length, 0) + workshop.shipped_user_property_flaws.length;
+console.log(`Amplitude contract passed: init → setUserId → identify → track; every value either side of the audit is produced; ${flawCount} planted flaws across ${workshop.actions.filter((a) => a.shipped.flaws.length).length} of ${workshop.actions.length} actions.`);

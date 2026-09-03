@@ -125,6 +125,24 @@ if (files["guide.html"]) {
     pass(files["guide.html"].includes(block.done_when), `Guide has stale done_when text for ${block.id}.`);
   }
   for (const action of workshop.actions) pass(files["guide.html"].includes(action.event_name), `Guide reference plan is missing ${action.event_name}.`);
+
+  // Everywhere the guide asks somebody to write something has to be an editable,
+  // self-saving field, not a blank box that vanishes when the tab closes.
+  for (const action of workshop.actions) {
+    for (const suffix of ["problem", "name"]) {
+      pass(files["guide.html"].includes(`data-note="${action.id}.${suffix}"`), `Guide worksheet has no editable ${suffix} field for ${action.id}.`);
+    }
+  }
+  for (const block of stations) {
+    pass(files["guide.html"].includes(`data-note="${block.id}.notes"`), `Guide has no notes field for ${block.id}.`);
+  }
+  pass(files["guide.html"].includes('data-note="user-properties.notes"'), "Guide has no notes field for the user property decision.");
+  pass(!files["guide.html"].includes('class="blank"'), "Guide still has non-editable blank cells.");
+  pass(files["guide.html"].includes(`localStorage.getItem(KEY)`) && files["guide.html"].includes(`workshop-notes:${workshop.id}`),
+    "Guide notes must persist in localStorage under a workshop-scoped key.");
+  pass(files["guide.html"].includes('id="clear-notes"') && files["guide.html"].includes('id="copy-notes"'),
+    "Guide needs controls to clear and copy notes.");
+  pass(/kept in this browser/.test(files["guide.html"]), "Guide must say the notes are local to this browser.");
 }
 
 if (files["app.html"]) {
@@ -189,7 +207,9 @@ if (files["app.html"]) {
   }
 }
 
-for (const name of ["slides.html", "app.html"]) {
+// Every generated page, not just the two that used to carry script. A broken inline
+// script fails silently in a browser, so this is the only thing that catches it.
+for (const name of expectedFiles) {
   if (!files[name]) continue;
   const scripts = [...files[name].matchAll(/<script(?![^>]*type="application\/json")[^>]*>([\s\S]*?)<\/script>/g)];
   for (const [index, script] of scripts.entries()) {

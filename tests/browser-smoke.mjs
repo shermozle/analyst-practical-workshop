@@ -10,6 +10,7 @@ import { launchChrome } from "./chrome.mjs";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const workshopId = process.argv[2] || "digital-analytics-practitioners";
 const dist = join(root, "dist", workshopId);
+const workshop = JSON.parse(await readFile(join(root, "workshops", workshopId, "workshop.json"), "utf8"));
 
 // ---------------------------------------------------------------- static server
 const types = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css" };
@@ -276,6 +277,49 @@ const OFFLINE_STUB = `
   window.sessionReplay = { plugin: (config) => ({ name: 'session-replay', type: 'enrichment', __config: config }) };
 `;
 
+// Guide notes: typed in, saved, and still there on a return visit.
+const GUIDE_WRITE = `(async () => {
+  const wait = (ms = 400) => new Promise(r => setTimeout(r, ms));
+  const results = { fields: document.querySelectorAll('[data-note]').length };
+  results.initialStatus = document.querySelector('#note-status').textContent;
+  const type = (name, value) => {
+    const el = document.querySelector('[data-note="' + name + '"]');
+    el.value = value;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    return el;
+  };
+  type('task-created.problem', 'Named after the button, and list_size is a string');
+  const station = type('station-1.notes', 'Two of the eight were already fine.\\nAsk about naming conventions.');
+  await wait();
+  results.savedStatus = document.querySelector('#note-status').textContent;
+  results.grewToFit = parseInt(station.style.height, 10) > 52;
+  try { results.stored = Object.keys(JSON.parse(localStorage.getItem('workshop-notes:${workshopId}') || '{}')).sort(); }
+  catch (e) { results.stored = 'THREW'; }
+  return results;
+})()`;
+
+const GUIDE_RETURN = `(() => {
+  const value = (name) => document.querySelector('[data-note="' + name + '"]').value;
+  return {
+    problem: value('task-created.problem'),
+    station: value('station-1.notes'),
+    untouched: value('task-deleted.problem'),
+    status: document.querySelector('#note-status').textContent
+  };
+})()`;
+
+const GUIDE_CLEAR = `(() => {
+  window.confirm = () => true;
+  document.querySelector('#clear-notes').click();
+  let stored = null;
+  try { stored = localStorage.getItem('workshop-notes:${workshopId}'); } catch (e) { stored = 'THREW'; }
+  return {
+    stored,
+    problem: document.querySelector('[data-note="task-created.problem"]').value,
+    status: document.querySelector('#note-status').textContent
+  };
+})()`;
+
 // ----------------------------------------------------------------- assertions
 const failures = [];
 const expect = (condition, message) => { if (!condition) failures.push(message); };
@@ -401,6 +445,28 @@ try {
     "The wire log doesn't surface the replay ID that Session Replay stamps on the event.");
   expect(connect.wirePayload?.session_id === 17, "The wire log doesn't surface the session ID.");
 
+  const guidePage = await openPage(`${origin}/guide.html`);
+  const written = await evaluate(guidePage.sessionId, GUIDE_WRITE);
+  expect(written.fields === workshop.actions.length * 2 + 6,
+    `Guide has ${written.fields} note fields, expected ${workshop.actions.length * 2 + 6}.`);
+  expect(/save in this browser/.test(written.initialStatus || ""), `Guide's initial note status reads "${written.initialStatus}".`);
+  expect(/^Saved /.test(written.savedStatus || ""), `Guide didn't report saving; status reads "${written.savedStatus}".`);
+  expect(written.grewToFit === true, "A multi-line note didn't grow to fit, so it would clip when printed.");
+  expect(JSON.stringify(written.stored) === JSON.stringify(["station-1.notes", "task-created.problem"]),
+    `localStorage holds ${JSON.stringify(written.stored)}.`);
+
+  // Coming back to the guide has to bring the notes back with it.
+  const returned = await evaluate((await openPage(`${origin}/guide.html`)).sessionId, GUIDE_RETURN);
+  expect(returned.problem === "Named after the button, and list_size is a string", `A returning visit restored "${returned.problem}".`);
+  expect(returned.station.includes("already fine"), `A returning visit restored the station note as "${returned.station}".`);
+  expect(returned.untouched === "", "An untouched field came back with content in it.");
+  expect(/2 notes restored/.test(returned.status || ""), `A returning visit reports "${returned.status}".`);
+
+  const cleared = await evaluate((await openPage(`${origin}/guide.html`)).sessionId, GUIDE_CLEAR);
+  expect(cleared.stored === null, `Clearing left ${cleared.stored} in localStorage.`);
+  expect(cleared.problem === "", "Clearing left text in the field.");
+  expect(/cleared/i.test(cleared.status || ""), `Clearing reports "${cleared.status}".`);
+
   const deckPage = await openPage(`${origin}/slides.html`);
   const deck = await evaluate(deckPage.sessionId, DECK_SCRIPT);
 
@@ -429,4 +495,4 @@ if (failures.length) {
   failures.forEach((failure) => console.error(`- ${failure}`));
   process.exit(1);
 }
-console.log("Browser smoke passed: planted flaws arrive intact, every correction changes the payload, the full setup (keys, plan, profile, list) round-trips through the URL and a share link, Session Replay and the wire log attach in order before init, plus the identity panel and slide fit.");
+console.log("Browser smoke passed: planted flaws arrive intact, every correction changes the payload, the full setup (keys, plan, profile, list) round-trips through the URL and a share link, Session Replay and the wire log attach in order before init, guide notes save and come back on a return visit, plus the identity panel and slide fit.");

@@ -36,6 +36,14 @@
     {
       "title": "Browser SDK 2 migration reference",
       "url": "https://amplitude.com/docs/sdks/analytics/browser/migrate-from-javascript-sdk-to-browser-sdk-2-0"
+    },
+    {
+      "title": "Session Replay privacy and masking",
+      "url": "https://amplitude.com/docs/session-replay/session-replay-standalone-sdk#mask-user-input"
+    },
+    {
+      "title": "Web Experiment",
+      "url": "https://amplitude.com/docs/web-experiment"
     }
   ],
   "run_of_show": [
@@ -828,6 +836,19 @@
         "Choose US or EU to match the Amplitude project"
       ],
       "notes": "Keep this visible during connection. The API key is a public client-side identifier, and the app keeps it in the browser tab rather than the URL, so a share link never carries it. The exercise state does live in the URL, so attendees should still keep personal and secret values out of every field."
+    },
+    {
+      "id": "replay-experiment",
+      "act": "Hands-on",
+      "block_id": "station-3",
+      "kind": "points",
+      "title": "Replay and experiments ride along",
+      "points": [
+        "Session Replay puts a replay ID on every event",
+        "Masking is instrumentation, not an afterthought",
+        "Web Experiment reports exposure through the same SDK"
+      ],
+      "notes": "Point at the Wire entries in the Activity panel. Session Replay is a plugin added before init, and it works by stamping a replay ID onto each event, which is the same join we used in the first hour to get from the funnel to a recording. The app masks every text node, so replays show what somebody did without what they typed: decide that before you ship replay, not after. The Web Experiment field is optional and needs a client-side deployment key with a running experiment, so most tables will leave it empty."
     },
     {
       "id": "station-4",

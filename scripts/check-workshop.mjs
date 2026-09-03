@@ -87,6 +87,11 @@ if (files["slides.html"]) {
   pass(files["slides.html"].includes("requestFullscreen"), "Deck needs a full-screen control.");
   pass(files["slides.html"].includes("@media print"), "Deck needs a print stylesheet.");
   pass(files["slides.html"].includes(workshop.hub_url), "Deck doesn't print the published hub URL.");
+  // The room scans this off the first slide, so it has to be inlined and present.
+  pass(files["slides.html"].includes('<figure class="cover-qr"><img src="data:image/png;base64,'),
+    "The cover slide has no inlined QR code. Put a PNG at workshops/<id>/assets/hub-qr.png.");
+  pass(files["slides.html"].includes(`alt="QR code linking to ${workshop.hub_url}"`),
+    "The cover QR doesn't declare the hub URL it points at.");
   // Click-to-advance must not fire while somebody is driving an interactive panel.
   if (workshop.slides.some((slide) => slide.kind === "identity-lab")) {
     pass(files["slides.html"].includes("data-interactive"), "Deck is missing the interactive identity panel.");
@@ -157,6 +162,23 @@ if (files["app.html"]) {
   }
   pass(files["app.html"].includes("data-toggle-id"), "App is missing the per-event tracking toggles.");
   pass(!files["app.html"].includes("event.submitter?'button'"), "App still infers entry_method from event.submitter.");
+
+  // Session Replay records the page, so masking is not optional here.
+  pass(files["app.html"].includes("plugin-session-replay-browser-1.35.0-min.js.gz"), "App doesn't load the pinned Session Replay plugin.");
+  pass(files["app.html"].includes("defaultMaskLevel:'conservative'"), "Session Replay must run with every text node masked.");
+  pass((files["app.html"].match(/amp-mask/g) || []).length >= 2, "The task input and task titles must both be marked amp-mask.");
+  pass(files["app.html"].includes("window.sessionReplay.plugin"), "App doesn't add Session Replay as a plugin.");
+  // The replay plugin has to be added before the wire log, or the log can't show
+  // the replay ID it stamps onto each event.
+  pass(files["app.html"].indexOf("await addSessionReplay()") < files["app.html"].indexOf("await addWireLog()"),
+    "Session Replay must be added before the wire log.");
+  pass(files["app.html"].indexOf("await addWireLog()") < files["app.html"].indexOf("amplitudeClient.init("),
+    "Plugins must be added before init.");
+  pass(files["app.html"].includes("workshop-wire-log"), "App is missing the wire log plugin.");
+  pass(files["app.html"].includes(".experiment.js"), "App doesn't load Web Experiment.");
+  // The deployment key gets the same treatment as the API key.
+  pass(files["app.html"].includes("params.delete('deploymentKey')"), "App must keep the deployment key out of the URL.");
+  pass(files["app.html"].includes("'deploymentKey'"), "App share link must strip the deployment key.");
   const forbiddenProperties = ["task_title", "task_text", "task_content", "email"];
   for (const property of forbiddenProperties) {
     const declared = workshop.actions.some((action) =>
